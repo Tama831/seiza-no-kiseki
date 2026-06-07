@@ -69,7 +69,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06060a;color:#c0c0c
 #complete-note.show{opacity:1}
 @media(max-width:600px){#story-scroll{padding-top:48px} .ep-title{font-size:17px} .ep-body{font-size:14px}}
 /* ===== data-layer (VR) view: 層 toggle turns the whole map into a data plane ===== */
-#layer-btn{position:fixed;bottom:22px;left:20px;background:rgba(8,10,20,.88);border:1px solid #1b3550;color:#3a6a90;padding:9px 20px;cursor:pointer;border-radius:20px;font-size:11px;letter-spacing:.18em;z-index:50;transition:all .25s;font-family:inherit}
+/* 層トグルは最初は隠れている。データ層に触れた時(ライのVR層 or ナギ出現)に発見的に出現する */
+#layer-btn{position:fixed;bottom:22px;left:20px;background:rgba(8,10,20,.88);border:1px solid #1b3550;color:#3a6a90;padding:9px 20px;cursor:pointer;border-radius:20px;font-size:11px;letter-spacing:.18em;z-index:50;transition:opacity .5s,transform .5s,background .25s,border-color .25s,color .25s,box-shadow .25s;font-family:inherit;opacity:0;visibility:hidden;transform:translateY(10px);pointer-events:none}
+#layer-btn.found{opacity:1;visibility:visible;transform:none;pointer-events:auto}
+#layer-btn.reveal-pulse{animation:layer-pulse 2.4s ease-out}
+@keyframes layer-pulse{0%{box-shadow:0 0 0 0 rgba(120,200,255,.5)}70%{box-shadow:0 0 0 18px rgba(120,200,255,0)}100%{box-shadow:0 0 0 0 rgba(120,200,255,0)}}
+#layer-hint{position:fixed;bottom:62px;left:20px;max-width:236px;background:rgba(0,18,40,.95);border:1px solid #2f6f9f;color:#9fd8f5;padding:10px 14px;border-radius:6px;font-size:11px;line-height:1.85;letter-spacing:.04em;z-index:60;opacity:0;transform:translateY(8px);transition:opacity .45s,transform .45s;pointer-events:none}
+#layer-hint.show{opacity:1;transform:none}
 #layer-btn:hover{border-color:#3a7ab0;color:#7ac8ff}
 body.vr-view #layer-btn{background:rgba(0,22,44,.92);border-color:#2f6f9f;color:#8fdcff;box-shadow:0 0 14px rgba(80,180,255,.3)}
 #data-grid{opacity:0;transition:opacity .5s}
@@ -79,6 +85,11 @@ body.vr-view #cartography{opacity:.32;transition:opacity .5s}
 body.vr-view #vr-scrim{opacity:1}
 #nexus-frame{opacity:.55;transition:opacity .5s}
 body.vr-view #nexus-frame{opacity:1}
+/* ナギの記録(道標) — データ層でのみ可視。ネクサス(シアン)に対し琥珀色 */
+.nagi-mark{opacity:0;transition:opacity .5s}
+.nagi-mark *{pointer-events:none}
+body.vr-view .nagi-mark{opacity:1}
+body.vr-view .nagi-mark .nm-hit{pointer-events:all;cursor:help}
 /* story overlay data-layer theming (when reading a VR character in VR層) */
 #story-overlay[data-vr="1"]{background:radial-gradient(ellipse at 50% 0%,rgba(0,18,42,.975) 0%,rgba(2,6,20,.98) 100%)}
 #story-overlay[data-vr="1"]::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;mix-blend-mode:screen;background:repeating-linear-gradient(0deg,rgba(120,200,255,.05) 0px,rgba(120,200,255,.05) 1px,transparent 1px,transparent 3px)}
@@ -360,6 +371,7 @@ body.vr-view #nexus-frame{opacity:1}
 <div id="tooltip"></div>
 <div id="zoom-hint">scroll: zoom<br>drag: pan</div>
 <button id="layer-btn">◐ 層</button>
+<div id="layer-hint"></div>
 <div id="vr-scrim"></div>
 <div id="complete-note"></div>
 
@@ -384,7 +396,7 @@ const CHARS = [
   {id:"char_16",name:"イダ・ソル",gender:"female",era:"AE 1943",origin:"ノルティア難民",episode_count:5,died:false,pattern:"wide_far",waypoints:[{ep:1,coord:[365,690],label:"アルカ高地"},{ep:2,coord:[450,700],label:"難民キャンプ"},{ep:3,coord:[560,710],label:"大陸中央部"},{ep:4,coord:[700,730],label:"エルダノ西岸"},{ep:5,coord:[785,735],label:"ミレス難民区"}]},
   {id:"char_17",name:"ゲオルク・ヴァン",gender:"male",era:"AE 1945",origin:"エルダノ市民",episode_count:4,died:true,pattern:"narrow",waypoints:[{ep:1,coord:[786,728],label:"ミレス東区"},{ep:2,coord:[780,735],label:"防空壕"},{ep:3,coord:[775,725],label:"市街"},{ep:4,coord:[784,730],label:"爆撃地点"}]},
   {id:"char_18",name:"アメリア・コス",gender:"female",era:"AE 1962",origin:"ノルティア",episode_count:5,died:false,pattern:"medium",cross_note:"9番と軌跡交差",waypoints:[{ep:1,coord:[400,720],label:"ノルティア南部"},{ep:2,coord:[560,720],label:"大陸横断鉄道"},{ep:3,coord:[760,740],label:"エルダノ南部"},{ep:4,coord:[1085,485],label:"カルタ北縁"},{ep:5,coord:[1105,505],label:"荒野の要塞跡"}]},
-  {id:"char_19",name:"サリム",gender:"male",era:"AE 1967",origin:"カルタ農村",episode_count:6,died:false,pattern:"same_start_far",cross_note:"15番と同起点",waypoints:[{ep:1,coord:[1380,820],label:"カルタ農村"},{ep:2,coord:[1320,700],label:"解放軍基地"},{ep:3,coord:[1250,580],label:"内陸"},{ep:4,coord:[1110,500],label:"国境通過"},{ep:5,coord:[1015,425],label:"ヴェルガ西部"},{ep:6,coord:[1000,405],label:"ユエン郊外"}]},
+  {id:"char_19",name:"サリム",gender:"male",era:"AE 1941",origin:"カルタ農村",episode_count:6,died:false,pattern:"same_start_far",cross_note:"15番と同起点",waypoints:[{ep:1,coord:[1380,820],label:"カルタ農村"},{ep:2,coord:[1320,700],label:"解放軍基地"},{ep:3,coord:[1250,580],label:"内陸"},{ep:4,coord:[1110,500],label:"国境通過"},{ep:5,coord:[1015,425],label:"ヴェルガ西部"},{ep:6,coord:[1000,405],label:"ユエン郊外"}]},
   {id:"char_20",name:"ユン・ジア",gender:"female",era:"AE 1975",origin:"ヴェルガ学生",episode_count:4,died:true,pattern:"narrow",waypoints:[{ep:1,coord:[1004,410],label:"ユエン大学"},{ep:2,coord:[1012,402],label:"示威運動広場"},{ep:3,coord:[996,414],label:"拘置所"},{ep:4,coord:[1006,408],label:"処刑場"}]},
   {id:"char_21",name:"トマル・セン",gender:"male",era:"AE 2063",origin:"ウスカリ城塞都市",episode_count:5,died:false,pattern:"medium",waypoints:[{ep:1,coord:[1650,810],label:"ウスカリ城塞都市"},{ep:2,coord:[1620,775],label:"赤土平原"},{ep:3,coord:[1600,745],label:"廃棄採掘地"},{ep:4,coord:[1635,775],label:"中間貿易路"},{ep:5,coord:[1595,800],label:"西部廃棄集落"}]},
   {id:"char_22",name:"ライ",gender:"unknown",era:"AE 2157",origin:"廃墟城塞",episode_count:4,died:false,pattern:"dual_layer",vr_mode:true,waypoints:[{ep:1,coord:[1648,805],label:"廃墟城塞（現実層）"},{ep:2,coord:[1665,790],label:"VR接続拠点"},{ep:3,coord:[1830,468],label:"情報都市ネクサス",layer:"vr"},{ep:4,coord:[1892,402],label:"廃墟/戦場（VR）",layer:"vr"}]},
@@ -394,7 +406,7 @@ const CHARS = [
   {id:"char_26",name:"ヨナ・テル",gender:"female",era:"AE 1946",origin:"カルタ北部油田の女工",episode_count:5,died:false,pattern:"medium",cross_note:"18番と交差(カルタ北縁)",waypoints:[{ep:1,coord:[1320,360],label:"北部油田の町"},{ep:2,coord:[1200,400],label:"鉄道操車場"},{ep:3,coord:[1105,478],label:"北縁の引込線"},{ep:4,coord:[1095,490],label:"フロンティアの哨所"},{ep:5,coord:[1180,385],label:"帰還の宿営"}]},
   {id:"char_27",name:"サナ",gender:"female",era:"AE 1939",origin:"エルダノ占領地の少女",episode_count:4,died:true,pattern:"narrow",cross_note:"14番クラウスと交差(加害/被害)",waypoints:[{ep:1,coord:[595,718],label:"占領された村"},{ep:2,coord:[590,712],label:"連行の列"},{ep:3,coord:[600,706],label:"収容所"},{ep:4,coord:[588,722],label:"埋められた窪地"}]},
   {id:"char_28",name:"オト",gender:"male",era:"AE 1916",origin:"第一次大戦の敵兵",episode_count:5,died:true,pattern:"medium",cross_note:"10/11番と同戦場(撃たれる側)",waypoints:[{ep:1,coord:[630,765],label:"敵塹壕"},{ep:2,coord:[650,775],label:"無人地帯"},{ep:3,coord:[668,772],label:"担架の上"},{ep:4,coord:[685,780],label:"野戦病院"},{ep:5,coord:[702,758],label:"後送先の地"}]},
-  {id:"char_29",name:"レン",gender:"male",era:"AE 1338",origin:"ヴェルガ水軍の漕ぎ手",episode_count:5,died:true,pattern:"medium",cross_note:"04番リャンと同内乱(海上の視点)",waypoints:[{ep:1,coord:[1015,432],label:"マカラ湾の水軍泊地"},{ep:2,coord:[1048,468],label:"ユエン沖の海戦"},{ep:3,coord:[995,400],label:"皇宮攻防"},{ep:4,coord:[1006,420],label:"焼ける都城"},{ep:5,coord:[1052,474],label:"沈む旗艦"}]},
+  {id:"char_29",name:"レン",gender:"male",era:"AE 1350",origin:"ヴェルガ水軍の漕ぎ手",episode_count:5,died:true,pattern:"medium",cross_note:"04番リャンと同内乱(海上の視点)",waypoints:[{ep:1,coord:[1015,432],label:"マカラ湾の水軍泊地"},{ep:2,coord:[1048,468],label:"ユエン沖の海戦"},{ep:3,coord:[995,400],label:"皇宮攻防"},{ep:4,coord:[1006,420],label:"焼ける都城"},{ep:5,coord:[1052,474],label:"沈む旗艦"}]},
   {id:"char_30",name:"トウカ",gender:"female",era:"AE 1920",origin:"霧島の漁民",episode_count:3,died:false,pattern:"narrow",cross_note:"13番ソウラと同じ占領下の島",waypoints:[{ep:1,coord:[970,216],label:"霧島の漁村"},{ep:2,coord:[966,224],label:"占領下の港"},{ep:3,coord:[958,208],label:"島影の入江"}]},
   {id:"char_31",name:"ガイ",gender:"male",era:"AE 2066",origin:"ウスカリ採掘民",episode_count:4,died:true,pattern:"medium",cross_note:"21番トマルと同じ資源戦争",waypoints:[{ep:1,coord:[1610,760],label:"採掘コロニー"},{ep:2,coord:[1620,775],label:"赤土平原の襲撃"},{ep:3,coord:[1600,745],label:"崩れる坑道"},{ep:4,coord:[1642,790],label:"難民の列"}]},
   {id:"char_32",name:"シェン",gender:"male",era:"AE 1855",origin:"海峡の渡し守",episode_count:4,died:false,pattern:"medium",waypoints:[{ep:1,coord:[805,560],label:"西岸の渡し場"},{ep:2,coord:[1010,428],label:"海峡の小島"},{ep:3,coord:[1080,498],label:"東岸の船着場"},{ep:4,coord:[928,536],label:"海峡の難所"}]},
@@ -405,6 +417,18 @@ const CHARS = [
 
 const CROSS_POINTS=[{coord:[1105,505],chars:["char_09","char_18"],tip:"時代の交差: AE1875 × AE1962\n87年の時を隔て、二人がここに立った"},{coord:[600,706],chars:["char_27","char_14"],tip:"加害と被害 — 同じ村の虐殺\nクラウス(将校)とサナ(少女)"},{coord:[650,775],chars:["char_28","char_10"],tip:"撃つ者と撃たれる者\nヴィレム(砲兵)とオト(敵兵)"},{coord:[685,780],chars:["char_28","char_11"],tip:"敵を看護する\nナディア(看護師)とオト(敵兵)"},{coord:[412,716],chars:["char_24","char_18"],tip:"受け継がれる独立運動\nアメリア(AE1962)とミラ(AE1971)"},{coord:[1095,490],chars:["char_26","char_18"],tip:"通り過ぎる者と住む者\nアメリアとヨナ・テル"},{coord:[995,400],chars:["char_29","char_04"],tip:"宮廷と海上 — 同じ内乱\nリャンとレン"},{coord:[966,224],chars:["char_30","char_13"],tip:"同じ占領下の島\nソウラとトウカ"},{coord:[1620,775],chars:["char_31","char_21"],tip:"傭兵と採掘民 — 同じ資源戦争\nトマルとガイ"},{coord:[1460,640],chars:["char_33","char_03"],tip:"遠征と防衛\nヨハン(騎士)とアムル(守り手)"},{coord:[540,382],chars:["char_34","char_06"],tip:"同じ植民征服・別部族\nカリンとノア"},{coord:[1490,650],chars:["char_35","char_03"],tip:"千年の時を越える巡礼\n落城の城塞跡にヨハンが倒れ、ナギが立つ"},{coord:[966,224],chars:["char_35","char_13"],tip:"占領の島、二百余年後\nソウラとトウカの島跡をナギが記録する"},{coord:[500,400],chars:["char_35","char_06"],tip:"焼かれた森の記憶\nカリンの森を五百年後にナギが歩く"}];
 const SAME_ORIGIN=[{coord:[1380,820],chars:["char_15","char_19"],tip:"同じ村から、別の運命へ\nマリクとサリム"}];
+// ナギ(char_35)がデータ層に残す記録/道標 (ネクサスには行かない). canon: characters.json char_35.data_layer_marks
+const NAGI_MARKS=[
+  {"coord": [1672, 790], "kind": "memo", "note": "廃城塞・中庭。\n人骨、複数。風化。歯だけが白い。\n土を掘る機械が一台、掘りに行く途中で止まっていた。\n— 数えられない数は、書かない。"},
+  {"coord": [1572, 727], "kind": "way", "note": "北西へ。次の水場まで、半日。"},
+  {"coord": [1505, 635], "kind": "memo", "note": "城は三層。古い城の上に城、その上にまた城。\nどの層でも、人が死んだ。\n— 次に来る者へ。残せば、それも新しい層になる。"},
+  {"coord": [1137, 690], "kind": "way", "note": "西。ここから骨が増える。読めるものだけ、写せ。"},
+  {"coord": [800, 715], "kind": "memo", "note": "灰の層、三。間に土、二。最上は灰。以後、堆積なし。\n三度焼けて、四度目は来なかった。住む者が、いなくなった。\n— 今、写さなければ、緑が来た後では、誰も写せない。"},
+  {"coord": [875, 477], "kind": "way", "note": "海。渡る舟は、自分で組め。北の島は、無人。"},
+  {"coord": [980, 212], "kind": "memo", "note": "漁師の村の跡。岩に、文字。\n苔を払って、戻さなかった。戻せば、また隠れる。\n— 次に来る者が、読めるように。"},
+  {"coord": [733, 312], "kind": "way", "note": "西の森は、若い。地面の下に、焼けた層。"},
+  {"coord": [515, 388], "kind": "memo", "note": "若い森。一斉に育った木。肘の深さに、焼けた炭の層。\n生きている森は、自分の下に何が埋まっているかを知らない。私は知っている。\n— 近くに、澄んだ川。計算しなくても、飲める。"}
+];
 
 // Stories — Phase 1 (chars 01–03 only)
 let STORIES = {};
@@ -627,6 +651,26 @@ function renderDots(){
   // ライ(留まる者)とナギ(歩く者): 同じ廃墟城塞から、意識は別次元へ / 足は世界へ
   if(nagiUnlocked())addMark(1650,805,19,'#4a6fa0','0.6','0.7','3,4',"同じ廃墟城塞から\n留まる者ライ — 意識は別次元へ\n歩く者ナギ — 足は世界へ");
 
+  // ナギの記録/道標 — データ層(vr-view)でのみ可視。ライ=ネクサスへ / ナギ=道の途中に記録を残す
+  if(nagiUnlocked()){
+    const NS='http://www.w3.org/2000/svg';
+    NAGI_MARKS.forEach(mk=>{
+      const memo=mk.kind!=='way',x=mk.coord[0],y=mk.coord[1],r=memo?5.2:3.4;
+      const g=document.createElementNS(NS,'g');g.setAttribute('class','nagi-mark');
+      const dia=document.createElementNS(NS,'path');
+      dia.setAttribute('d','M '+x+' '+(y-r)+' L '+(x+r)+' '+y+' L '+x+' '+(y+r)+' L '+(x-r)+' '+y+' Z');
+      dia.setAttribute('fill',memo?'rgba(228,198,140,0.22)':'rgba(0,0,0,0)');
+      dia.setAttribute('stroke',memo?'#e6c88e':'#caa86a');dia.setAttribute('stroke-width',memo?'0.9':'0.7');
+      g.appendChild(dia);
+      if(memo){const gl=document.createElementNS(NS,'circle');gl.setAttribute('cx',x);gl.setAttribute('cy',y);gl.setAttribute('r','0.9');gl.setAttribute('fill','#f4e6c0');g.appendChild(gl);}
+      const hit=document.createElementNS(NS,'circle');hit.setAttribute('class','nm-hit');
+      hit.setAttribute('cx',x);hit.setAttribute('cy',y);hit.setAttribute('r',memo?11:8);hit.setAttribute('fill','rgba(0,0,0,0)');
+      hit.addEventListener('mouseenter',e=>tip(e,mk.note));hit.addEventListener('mousemove',e=>tip(e,mk.note));hit.addEventListener('mouseleave',hideTip);
+      hit.addEventListener('click',e=>{e.stopPropagation();tip(e,mk.note);clearTimeout(st._nmT);st._nmT=setTimeout(hideTip,4600);});
+      g.appendChild(hit);dotsL.appendChild(g);
+    });
+  }
+
   // transparent wide hit-paths over each REVEALED (read) trail -> hover the line to lift it
   CHARS.forEach(c=>{
     if(!charVisible(c))return;
@@ -769,6 +813,7 @@ function openEp(id,ep){
   const wi=epd.waypoint_index!=null?epd.waypoint_index:ep-1;
   const wl=c.waypoints[wi];
   overlay.dataset.vr=(c.vr_mode&&wl&&wl.layer==='vr')?'1':'0';
+  if(overlay.dataset.vr==='1')revealLayer(); // ライがデータ層(ネクサス)に入る→層トグルを発見的に出す
   const p=getProg(id);
   const likes=epd.likes;
   scontent.innerHTML=`
@@ -810,13 +855,17 @@ function revealNagi(){
   const n=document.getElementById('complete-note');if(!n)return;
   n.innerHTML='巡礼の刻<br><span style="font-size:11px;color:#7ad0ff;letter-spacing:.12em">廃墟を歩く者が、地図に現れた</span>';
   n.classList.add('show');setTimeout(()=>n.classList.remove('show'),5200);
+  revealLayer(); // ナギ出現=データ層に記録を残す者の出現→層トグルを出す
 }
 function navEp(d){
   const c=CHARS.find(x=>x.id===st.currentChar);
   const ne=st.currentEp+d;
   if(ne>=1&&ne<=c.episode_count)openEp(st.currentChar,ne);
 }
-function closeStory(){overlay.classList.remove('visible');st.currentChar=null;st.currentEp=null}
+function closeStory(){
+  overlay.classList.remove('visible');st.currentChar=null;st.currentEp=null;
+  if(st._layerHintPending){st._layerHintPending=false;const b=document.getElementById('layer-btn');if(b){b.classList.add('reveal-pulse');setTimeout(()=>b.classList.remove('reveal-pulse'),2500);}showLayerHint();}
+}
 function doLike(btn){
   const icon=document.getElementById('like-icon'),cnt=document.getElementById('like-cnt');
   if(icon.textContent==='♡'){icon.textContent='♥';icon.style.color='#999';cnt.textContent=(+cnt.textContent.replace(/,/g,'')+1).toLocaleString();btn.classList.add('liked')}
@@ -963,6 +1012,23 @@ function toggleLayer(){
 }
 buildDataGrid();buildNexusFrame();
 document.getElementById('layer-btn').addEventListener('click',toggleLayer);
+// 層トグルの発見的出現: 初回はパルス+ヒント、再訪時(localStorage)は最初から表示
+function showLayerHint(){
+  const h=document.getElementById('layer-hint');if(!h)return;
+  h.innerHTML='この世界には、もう一つの層がある。<br>左下の <b>◐ 層</b> で、現実層とデータ層を切り替えられる。';
+  h.classList.add('show');clearTimeout(st._lhT);st._lhT=setTimeout(()=>h.classList.remove('show'),7200);
+}
+function revealLayer(){
+  const b=document.getElementById('layer-btn');if(!b)return;
+  const firstEver=!localStorage.getItem('seiza-layer');
+  if(b.classList.contains('found')&&!firstEver)return;
+  localStorage.setItem('seiza-layer','1');b.classList.add('found');
+  if(firstEver){
+    if(overlay.classList.contains('visible')){st._layerHintPending=true;} // 読書中→閉じた時にヒント
+    else{b.classList.add('reveal-pulse');setTimeout(()=>b.classList.remove('reveal-pulse'),2500);showLayerHint();}
+  }
+}
+if(localStorage.getItem('seiza-layer'))document.getElementById('layer-btn').classList.add('found');
 center();renderDots();drawTrails();
 loadStories().then(()=>{renderDots();drawTrails()});
 // ===== entry gate (content warning, shown once per browser) =====
