@@ -85,11 +85,13 @@ body.vr-view #cartography{opacity:.32;transition:opacity .5s}
 body.vr-view #vr-scrim{opacity:1}
 #nexus-frame{opacity:.55;transition:opacity .5s}
 body.vr-view #nexus-frame{opacity:1}
-/* ナギの記録(道標) — データ層でのみ可視。ネクサス(シアン)に対し琥珀色 */
-.nagi-mark{opacity:0;transition:opacity .5s}
-.nagi-mark *{pointer-events:none}
-body.vr-view .nagi-mark{opacity:1}
-body.vr-view .nagi-mark .nm-hit{pointer-events:all;cursor:help}
+/* データ層では現実の軌跡・点・交差マークを隠し、ナギの記録だけの面にする */
+body.vr-view #dots-layer{opacity:0;pointer-events:none;transition:opacity .5s}
+/* ナギの記録(道標) — 専用レイヤ。データ層でのみ可視。ネクサス(シアン)に対し琥珀色 */
+#nagi-layer{opacity:0;transition:opacity .5s}
+#nagi-layer .nm-hit{pointer-events:none;cursor:help}
+body.vr-view #nagi-layer{opacity:1}
+body.vr-view #nagi-layer .nm-hit{pointer-events:all}
 /* story overlay data-layer theming (when reading a VR character in VR層) */
 #story-overlay[data-vr="1"]{background:radial-gradient(ellipse at 50% 0%,rgba(0,18,42,.975) 0%,rgba(2,6,20,.98) 100%)}
 #story-overlay[data-vr="1"]::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;mix-blend-mode:screen;background:repeating-linear-gradient(0deg,rgba(120,200,255,.05) 0px,rgba(120,200,255,.05) 1px,transparent 1px,transparent 3px)}
@@ -419,15 +421,24 @@ const CROSS_POINTS=[{coord:[1105,505],chars:["char_09","char_18"],tip:"時代の
 const SAME_ORIGIN=[{coord:[1380,820],chars:["char_15","char_19"],tip:"同じ村から、別の運命へ\nマリクとサリム"}];
 // ナギ(char_35)がデータ層に残す記録/道標 (ネクサスには行かない). canon: characters.json char_35.data_layer_marks
 const NAGI_MARKS=[
-  {"coord": [1672, 790], "kind": "memo", "note": "廃城塞・中庭。\n人骨、複数。風化。歯だけが白い。\n土を掘る機械が一台、掘りに行く途中で止まっていた。\n— 数えられない数は、書かない。"},
-  {"coord": [1572, 727], "kind": "way", "note": "北西へ。次の水場まで、半日。"},
-  {"coord": [1505, 635], "kind": "memo", "note": "城は三層。古い城の上に城、その上にまた城。\nどの層でも、人が死んだ。\n— 次に来る者へ。残せば、それも新しい層になる。"},
-  {"coord": [1137, 690], "kind": "way", "note": "西。ここから骨が増える。読めるものだけ、写せ。"},
-  {"coord": [800, 715], "kind": "memo", "note": "灰の層、三。間に土、二。最上は灰。以後、堆積なし。\n三度焼けて、四度目は来なかった。住む者が、いなくなった。\n— 今、写さなければ、緑が来た後では、誰も写せない。"},
-  {"coord": [875, 477], "kind": "way", "note": "海。渡る舟は、自分で組め。北の島は、無人。"},
-  {"coord": [980, 212], "kind": "memo", "note": "漁師の村の跡。岩に、文字。\n苔を払って、戻さなかった。戻せば、また隠れる。\n— 次に来る者が、読めるように。"},
-  {"coord": [733, 312], "kind": "way", "note": "西の森は、若い。地面の下に、焼けた層。"},
-  {"coord": [515, 388], "kind": "memo", "note": "若い森。一斉に育った木。肘の深さに、焼けた炭の層。\n生きている森は、自分の下に何が埋まっているかを知らない。私は知っている。\n— 近くに、澄んだ川。計算しなくても、飲める。"}
+  {"coord": [1672, 790], "kind": "memo", "note": "廃城塞・中庭。人骨、複数。風化。\n歯だけが白い。骨が粉になっても、歯は形を残す。\n— 人がいたという、最も長く残る証。"},
+  {"coord": [1636, 826], "kind": "memo", "note": "土を掘る機械が一台、城に背を向けて、掘りに行く途中で止まっていた。\n燃料か、故障か、動かす者が消えたか。形は理由を語らない。"},
+  {"coord": [1600, 754], "kind": "way", "note": "北西へ。次の水場まで、半日。"},
+  {"coord": [1546, 703], "kind": "way", "note": "風が赤い土を削る。口を覆え。"},
+  {"coord": [1507, 635], "kind": "memo", "note": "城は三層。古い城の上に城、その上にまた城。\nどの層でも、人が登り、守り、死んだ。"},
+  {"coord": [1471, 671], "kind": "memo", "note": "残せば、それも新しい層になる。\n— 次に来る者へ。お前も、いつか層になる。"},
+  {"coord": [1257, 676], "kind": "way", "note": "西。ここから骨が増える。読めるものだけ、写せ。"},
+  {"coord": [1025, 703], "kind": "way", "note": "平原。日陰がない。陽の位置で水を計れ。"},
+  {"coord": [802, 715], "kind": "memo", "note": "灰の層、三。間に土、二。最上は灰。以後、堆積なし。\n三度焼けて、四度目は来なかった。住む者が、いなくなったから。"},
+  {"coord": [766, 751], "kind": "memo", "note": "街の外は、緑だった。灰の上に草は生えにくい。\nいつか森になり、層は土の下に埋まる。\n— 今、写さなければ、緑が来た後では誰も写せない。"},
+  {"coord": [845, 563], "kind": "way", "note": "北へ。海が近づく。"},
+  {"coord": [904, 396], "kind": "way", "note": "渡る舟は、自分で組め。北の島は、無人。"},
+  {"coord": [983, 209], "kind": "memo", "note": "漁師の村の跡。岩に、文字。\n苔を払って、戻さなかった。戻せば、また隠れる。\n— 次に来る者が、読めるように。"},
+  {"coord": [947, 245], "kind": "memo", "note": "鉄が、海風で錆びていた。錆が層を作り、剥がれ、また錆びる。\n元の形は、もう覆われて見えない。"},
+  {"coord": [812, 282], "kind": "way", "note": "西の森をめざす。"},
+  {"coord": [658, 340], "kind": "way", "note": "森は若い。地面の下に、焼けた層。"},
+  {"coord": [517, 385], "kind": "memo", "note": "若い森。木がみな同じ太さ。一度、森が消えた証。\n肘ほどの深さに、焼けた炭の層。"},
+  {"coord": [481, 421], "kind": "memo", "note": "生きている森は、自分の下に何が埋まっているかを知らない。\n私は知っている。知ったまま、森の音を聞いた。\n— 近くに澄んだ川。計算しなくても、飲める。"}
 ];
 
 // Stories — Phase 1 (chars 01–03 only)
@@ -559,6 +570,7 @@ function drawTrails(){
     for(let i=0;i<seg;i++){
       const f=c.waypoints[i].coord,t=c.waypoints[i+1].coord;
       const vr=c.waypoints[i+1].layer==='vr';
+      if(vv&&!vr)continue;          // データ層では現実の軌跡を描かない(VR/データの軌跡だけ残す)
       const fade=vv?(vr?1:.2):1;
       if(vr){
         seg2(f,t,3.4,'#39b8ff',(isHover?.5:.32)*(vv?1:.85));
@@ -573,7 +585,7 @@ function drawTrails(){
     }
     ctx.globalAlpha=1;
   });
-  if(allDone()&&!hv)drawGlobalBonus();
+  if(allDone()&&!hv&&!st.vrView)drawGlobalBonus();
 }
 
 // ===== HOVER HIGHLIGHT (lift a whole trajectory: 'this is the path they took') =====
@@ -651,24 +663,28 @@ function renderDots(){
   // ライ(留まる者)とナギ(歩く者): 同じ廃墟城塞から、意識は別次元へ / 足は世界へ
   if(nagiUnlocked())addMark(1650,805,19,'#4a6fa0','0.6','0.7','3,4',"同じ廃墟城塞から\n留まる者ライ — 意識は別次元へ\n歩く者ナギ — 足は世界へ");
 
-  // ナギの記録/道標 — データ層(vr-view)でのみ可視。ライ=ネクサスへ / ナギ=道の途中に記録を残す
-  if(nagiUnlocked()){
-    const NS='http://www.w3.org/2000/svg';
-    NAGI_MARKS.forEach(mk=>{
-      const memo=mk.kind!=='way',x=mk.coord[0],y=mk.coord[1],r=memo?5.2:3.4;
-      const g=document.createElementNS(NS,'g');g.setAttribute('class','nagi-mark');
-      const dia=document.createElementNS(NS,'path');
-      dia.setAttribute('d','M '+x+' '+(y-r)+' L '+(x+r)+' '+y+' L '+x+' '+(y+r)+' L '+(x-r)+' '+y+' Z');
-      dia.setAttribute('fill',memo?'rgba(228,198,140,0.22)':'rgba(0,0,0,0)');
-      dia.setAttribute('stroke',memo?'#e6c88e':'#caa86a');dia.setAttribute('stroke-width',memo?'0.9':'0.7');
-      g.appendChild(dia);
-      if(memo){const gl=document.createElementNS(NS,'circle');gl.setAttribute('cx',x);gl.setAttribute('cy',y);gl.setAttribute('r','0.9');gl.setAttribute('fill','#f4e6c0');g.appendChild(gl);}
-      const hit=document.createElementNS(NS,'circle');hit.setAttribute('class','nm-hit');
-      hit.setAttribute('cx',x);hit.setAttribute('cy',y);hit.setAttribute('r',memo?11:8);hit.setAttribute('fill','rgba(0,0,0,0)');
-      hit.addEventListener('mouseenter',e=>tip(e,mk.note));hit.addEventListener('mousemove',e=>tip(e,mk.note));hit.addEventListener('mouseleave',hideTip);
-      hit.addEventListener('click',e=>{e.stopPropagation();tip(e,mk.note);clearTimeout(st._nmT);st._nmT=setTimeout(hideTip,4600);});
-      g.appendChild(hit);dotsL.appendChild(g);
-    });
+  // ナギの記録/道標 — 専用レイヤ(#nagi-layer)。データ層(vr-view)でのみ可視・操作可。当たり判定は広め
+  const nagiL=document.getElementById('nagi-layer');
+  if(nagiL){
+    nagiL.innerHTML='';
+    if(nagiUnlocked()){
+      const NS='http://www.w3.org/2000/svg';
+      NAGI_MARKS.forEach(mk=>{
+        const memo=mk.kind!=='way',x=mk.coord[0],y=mk.coord[1],r=memo?5.4:3.6;
+        const g=document.createElementNS(NS,'g');g.setAttribute('class','nagi-mark');
+        const dia=document.createElementNS(NS,'path');
+        dia.setAttribute('d','M '+x+' '+(y-r)+' L '+(x+r)+' '+y+' L '+x+' '+(y+r)+' L '+(x-r)+' '+y+' Z');
+        dia.setAttribute('fill',memo?'rgba(228,198,140,0.22)':'rgba(0,0,0,0)');
+        dia.setAttribute('stroke',memo?'#e6c88e':'#caa86a');dia.setAttribute('stroke-width',memo?'0.9':'0.7');
+        g.appendChild(dia);
+        if(memo){const gl=document.createElementNS(NS,'circle');gl.setAttribute('cx',x);gl.setAttribute('cy',y);gl.setAttribute('r','0.95');gl.setAttribute('fill','#f4e6c0');g.appendChild(gl);}
+        const hit=document.createElementNS(NS,'circle');hit.setAttribute('class','nm-hit');
+        hit.setAttribute('cx',x);hit.setAttribute('cy',y);hit.setAttribute('r',memo?18:14);hit.setAttribute('fill','rgba(0,0,0,0)');
+        hit.addEventListener('mouseenter',e=>tip(e,mk.note));hit.addEventListener('mousemove',e=>tip(e,mk.note));hit.addEventListener('mouseleave',hideTip);
+        hit.addEventListener('click',e=>{e.stopPropagation();tip(e,mk.note);clearTimeout(st._nmT);st._nmT=setTimeout(hideTip,4600);});
+        g.appendChild(hit);nagiL.appendChild(g);
+      });
+    }
   }
 
   // transparent wide hit-paths over each REVEALED (read) trail -> hover the line to lift it
@@ -1010,7 +1026,11 @@ function toggleLayer(){
   document.getElementById('layer-btn').textContent=st.vrView?'◉ データ層':'◐ 層';
   drawTrails();
 }
-buildDataGrid();buildNexusFrame();
+function buildNagiLayer(){
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.id='nagi-layer';
+  const dl=document.getElementById('dots-layer');dl.parentNode.insertBefore(g,dl);
+}
+buildDataGrid();buildNexusFrame();buildNagiLayer();
 document.getElementById('layer-btn').addEventListener('click',toggleLayer);
 // 層トグルの発見的出現: 初回はパルス+ヒント、再訪時(localStorage)は最初から表示
 function showLayerHint(){
