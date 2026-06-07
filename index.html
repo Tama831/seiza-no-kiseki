@@ -431,8 +431,8 @@ const NAGI_MARKS=[
   {"coord": [1025, 703], "kind": "way", "note": "平原。日陰がない。陽の位置で水を計れ。"},
   {"coord": [802, 715], "kind": "memo", "note": "灰の層、三。間に土、二。最上は灰。以後、堆積なし。\n三度焼けて、四度目は来なかった。住む者が、いなくなったから。"},
   {"coord": [766, 751], "kind": "memo", "note": "街の外は、緑だった。灰の上に草は生えにくい。\nいつか森になり、層は土の下に埋まる。\n— 今、写さなければ、緑が来た後では誰も写せない。"},
-  {"coord": [845, 563], "kind": "way", "note": "北へ。海が近づく。"},
-  {"coord": [904, 396], "kind": "way", "note": "渡る舟は、自分で組め。北の島は、無人。"},
+  {"coord": [858, 580], "kind": "way", "note": "北へ。海が近づく。"},
+  {"coord": [905, 278], "kind": "way", "note": "渡る舟は、自分で組め。北の島は、無人。"},
   {"coord": [983, 209], "kind": "memo", "note": "漁師の村の跡。岩に、文字。\n苔を払って、戻さなかった。戻せば、また隠れる。\n— 次に来る者が、読めるように。"},
   {"coord": [947, 245], "kind": "memo", "note": "鉄が、海風で錆びていた。錆が層を作り、剥がれ、また錆びる。\n元の形は、もう覆われて見えない。"},
   {"coord": [812, 282], "kind": "way", "note": "西の森をめざす。"},
@@ -669,6 +669,14 @@ function renderDots(){
     nagiL.innerHTML='';
     if(nagiUnlocked()){
       const NS='http://www.w3.org/2000/svg';
+      // ナギの道筋 — 記録を結ぶ薄い琥珀の線(データ層のみ)。霧島(ep4)への海区間だけ海路に迂回
+      const nw=CHARS.find(c=>c.id===NAGI_ID).waypoints.map(w=>w.coord);
+      const thread=[nw[0],nw[1],nw[2],[858,580],[905,278],nw[3],nw[4]];
+      const tl=document.createElementNS(NS,'polyline');
+      tl.setAttribute('points',thread.map(c=>c.join(',')).join(' '));
+      tl.setAttribute('fill','none');tl.setAttribute('stroke','#d8b87a');tl.setAttribute('stroke-width','1.1');
+      tl.setAttribute('stroke-opacity','0.5');tl.setAttribute('stroke-dasharray','5,6');tl.setAttribute('stroke-linejoin','round');tl.setAttribute('stroke-linecap','round');
+      nagiL.appendChild(tl);
       NAGI_MARKS.forEach(mk=>{
         const memo=mk.kind!=='way',x=mk.coord[0],y=mk.coord[1],r=memo?5.4:3.6;
         const g=document.createElementNS(NS,'g');g.setAttribute('class','nagi-mark');
