@@ -72,16 +72,18 @@ body.vr-view #paper-grain{opacity:0}
 /* 露光は固定 — 星は脈動しない(鎮魂の静止)。クラス名はJS互換のため残す */
 .dot-glow,.dot-glow-dead{animation:none}
 .dot-label{opacity:0;transition:opacity .3s;pointer-events:none;font-size:7px;font-family:var(--font-jp);letter-spacing:.15em}
-/* 読了の定着 / 二重露光 — 一度だけ走り、戻らない */
-.fx-ring{pointer-events:none;animation:fix-ring 1.2s cubic-bezier(.2,.6,.3,1) both}
-@keyframes fix-ring{0%{r:3;opacity:.85}100%{r:13;opacity:0}}
-.fx-cross{pointer-events:none;animation:double-expose 1.4s cubic-bezier(.2,.6,.3,1) both}
-@keyframes double-expose{0%{r:4;opacity:.9}100%{r:26;opacity:0}}
+/* 読了の定着 / 二重露光 — 一度だけ走り、戻らない。
+   Safari は SVG r の CSS アニメ非対応のため transform:scale で拡げる */
+.fx-ring,.fx-cross{pointer-events:none;transform-box:fill-box;transform-origin:center}
+.fx-ring{animation:fix-ring 1.2s cubic-bezier(.2,.6,.3,1) both}
+@keyframes fix-ring{0%{transform:scale(.23);opacity:.85}100%{transform:scale(1);opacity:0}}
+.fx-cross{animation:double-expose 1.4s cubic-bezier(.2,.6,.3,1) both}
+@keyframes double-expose{0%{transform:scale(.15);opacity:.9}100%{transform:scale(1);opacity:0}}
 /* 死者: 白く定着 → ゆっくり赤錆へ酸化して止まる(2段階) */
 .oxidizing{animation:oxidize 3.4s ease-in both}
 @keyframes oxidize{0%{fill:#eaf2fb}30%{fill:#eaf2fb}100%{fill:#b5654a}}
 /* 全35人読了 — 唯一の同期: 全星が一度だけ深く一呼吸 */
-body.finale .dot-glow{animation:breath 6s ease-in-out 1 both}
+body.finale .dot-glow{animation:breath 6s ease-in-out 1}
 @keyframes breath{0%{opacity:.22}40%{opacity:.62}62%{opacity:.62}100%{opacity:.22}}
 /* ===== 物語リーダ — アーカイブの翻刻ページ(図と明度反転) ===== */
 #story-overlay{position:fixed;inset:0;background:rgba(7,16,31,.74);z-index:100;display:flex;flex-direction:column;align-items:center;padding:0 20px;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .4s}
@@ -544,10 +546,13 @@ const CY={
 // 時代の色温度 — 黒体放射の転用: 古い記憶ほど冷めて赤く(温白)、新しいほど青白く熱い
 const ERA_STOPS=[[500,'#f2e7cf'],[1200,'#e9e2d2'],[1700,'#e3e9ec'],[1950,'#dbe8f6']];
 function eraColor(era){
-  const y=parseInt((era.match(/AE (\d+)/)||[,2000])[1]);
+  const m=(era||'').match(/AE (\d+)/);
+  const y=m?parseInt(m[1],10):2000;
   for(const [t,c] of ERA_STOPS) if(y<t) return c;
   return '#cfe2fb';
 }
+// JS駆動アニメ(canvas)もCSSと同様に reduced-motion を尊重する
+const REDUCED_MOTION=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ===== STATE =====
 const st = {
@@ -640,7 +645,7 @@ const canvas=document.getElementById('trail-canvas');
 const ctx=canvas.getContext('2d');
 
 function eraAlpha(era){
-  const y=parseInt((era.match(/AE (\d+)/)||[,2000])[1]);
+  const y=parseInt(((era||'').match(/AE (\d+)/)||[,2000])[1]);
   // raised floor so old-era trails stay legible (was .28..9 -> too faint)
   return y<500?.52:y<1200?.6:y<1700?.68:y<1950?.8:y<2100?.88:.96;
 }
@@ -1075,17 +1080,20 @@ function finishNext(){
 // ===== 感光エフェクト群 — 全て一度だけ走り、戻らない(露光は不可逆) =====
 // 駆動は経過時間ベース + setTimeout(30fps)。RAFが間引かれる環境でも最終状態に必ず到達する
 function startFreshFade(id,idx){
+  if(REDUCED_MOTION){drawTrails();return}
   const t0=performance.now();
   st.fresh={id,idx,k:0};
   (function step(){
+    if(!st.fresh)return;
     st.fresh.k=Math.min(1,(performance.now()-t0)/1000);
-    drawTrails();
-    if(st.fresh.k<1)setTimeout(step,33);
+    if(st.fresh.k<1){drawTrails();setTimeout(step,33);return}
+    st.fresh=null;drawTrails(); // 定着完了 — 以後は通常の読了線として静止する(露光は不可逆)
   })();
 }
-function fireRing(x,y,cls,baseR){
+function fireRing(x,y,cls){
+  // r は最終半径で固定し、拡大は CSS transform:scale で行う(Safari の r アニメ非対応対策)
   const r=document.createElementNS('http://www.w3.org/2000/svg','circle');
-  r.setAttribute('cx',x);r.setAttribute('cy',y);r.setAttribute('r',baseR||3);
+  r.setAttribute('cx',x);r.setAttribute('cy',y);r.setAttribute('r',cls==='fx-cross'?26:13);
   r.setAttribute('fill','none');r.setAttribute('stroke',cls==='fx-cross'?CY.cross:CY.light);
   r.setAttribute('stroke-width',cls==='fx-cross'?'1.1':'0.9');
   r.setAttribute('class',cls);
@@ -1104,16 +1112,11 @@ function fixStar(id,died){
   }
 }
 function fireDoubleExpose(cp){
-  fireRing(cp.coord[0],cp.coord[1],'fx-cross',4);
+  fireRing(cp.coord[0],cp.coord[1],'fx-cross');
 }
 // 全35人 — 大星座が3.5sかけて端から現像され、全星が一度だけ深く一呼吸する
 function startFinale(){
-  st.finaleP=0;
-  const t0=performance.now();
-  (function step(){
-    st.finaleP=Math.min(1,(performance.now()-t0)/3500);
-    drawTrails();
-    if(st.finaleP<1){setTimeout(step,33);return}
+  const done=()=>{
     st.finaleP=null;drawTrails();
     document.body.classList.add('finale');
     const n=document.getElementById('complete-note');
@@ -1121,7 +1124,16 @@ function startFinale(){
       n.innerHTML='<span style="font-family:var(--font-mono);letter-spacing:.3em;font-size:14px">35 / 35 — developed</span><br><span style="font-size:12px;color:#aec4de;letter-spacing:.2em">すべての証が、紙に残った</span>';
       n.classList.add('show');setTimeout(()=>n.classList.remove('show'),8000);
     }
-  })(t0);
+  };
+  if(REDUCED_MOTION){done();return}
+  st.finaleP=0;
+  const t0=performance.now();
+  (function step(){
+    st.finaleP=Math.min(1,(performance.now()-t0)/3500);
+    drawTrails();
+    if(st.finaleP<1){setTimeout(step,33);return}
+    done();
+  })();
 }
 function revealNagi(){
   const n=document.getElementById('complete-note');if(!n)return;
