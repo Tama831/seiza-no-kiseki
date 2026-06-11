@@ -13,76 +13,136 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<!-- 書体: Shippori(和文・unicode-range分割なので使用グリフ分だけ取得される) / Spectral(欧文・数字) / Major Mono(整理スタンプ) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&family=Spectral:wght@200;300;400;500&family=Major+Mono+Display&display=swap">
 <style>
+/* ════════════════════════════════════════════════════════════════
+   青写真の星図 — Cyanotype Archive
+   プルシアンブルーに沈んだ感光紙の上を、人が歩いた跡だけが白く感光して残る。
+   読むという行為が露光であり、触れた星から先へ足跡が白く焼きつけられていく。
+   モーション言語=「感光と定着」: 遅く・一方向・不可逆。点滅し続ける動きは媒体の嘘。
+   ════════════════════════════════════════════════════════════════ */
+:root{
+  /* 紙と地 (un-exposed paper) */
+  --cy-paper-0:#0a1a30; --cy-paper-1:#0e2647; --cy-paper-2:#13325c; --cy-paper-3:#1b4170;
+  --cy-ink:#0a2d5e; --cy-grat:#163a66;
+  /* 感光した光 (figure) — 純白は最新区間と交差の閃光のみに許可 */
+  --cy-light:#eaf2fb; --cy-light-warm:#f4eede; --cy-halation:#9fc6ef;
+  --cy-trail:#d8e6f5; --cy-trail-fresh:#ffffff;
+  /* 死者 = 局所酸化の赤錆 (鮮血ではない) */
+  --cy-dead:#b5654a; --cy-dead-halo:#7a3b2c;
+  --cy-cross:#ffffff; --cy-cross-aura:#bcd8f4;
+  /* データ層 (デジタイズされた青写真スキャン) */
+  --vr-grid:#2f6f9f; --vr-node:#7ad0ff; --vr-frame:#0a1c34; --vr-line:#39b8ff; --vr-line-hi:#bfeaff;
+  /* 琥珀 (ナギ=整理者の手書き) */
+  --amber-ink:#d8b87a; --amber-mark:#e6c88e; --amber-glow:#f4e6c0;
+  /* アーカイブ紙面 (翻刻ページ) */
+  --arc-paper:#ece6d6; --arc-paper-edge:#ddd2ba; --arc-text:#1a2b44; --arc-text-soft:#3a4a63;
+  --arc-pencil:#8a8270; --arc-rule:#c8bca0;
+  /* 図上のUI文字 */
+  --ui-on-dark:#aec4de; --ui-on-dark-dim:#5f7da3; --ui-stamp:#7fa8d4;
+  --font-jp:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;
+  --font-en:"Spectral",Georgia,serif;
+  --font-mono:"Major Mono Display",monospace;
+}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;overflow:hidden;background:#06060a;color:#c0c0cc;font-family:'Georgia','Hiragino Mincho ProN','Yu Mincho',serif;user-select:none}
-#map-root{position:fixed;inset:0;overflow:hidden;cursor:grab}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--cy-paper-0);color:var(--ui-on-dark);font-family:var(--font-jp);user-select:none}
+/* ===== 印画紙の面 (map) ===== */
+#map-root{position:fixed;inset:0;overflow:hidden;cursor:grab;background:var(--cy-paper-0)}
 #map-root.dragging{cursor:grabbing}
+#map-root::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 280px 60px var(--cy-paper-0)}
 #map-stage{position:absolute;transform-origin:0 0;will-change:transform}
 #world-svg{display:block;width:2000px;height:1120px}
 #trail-canvas{position:absolute;top:0;left:0;width:2000px;height:1120px;pointer-events:none}
+/* Azgaar原図は未感光の紙に沈める(輝度逆転の要)。filterは使わない=pan/zoom性能保護 */
+#viewbox{opacity:.16}
+#cy-base,#cy-tint{transition:opacity .5s}
+body.vr-view #cy-base,body.vr-view #cy-tint{opacity:.3}
+/* 霧島の切り傷(物語要素)を青の世界に馴染ませる */
+#kirishima-cut path:first-child{fill:#0a1f3c;opacity:.6}
+#kirishima-cut path:not(:first-child){fill:#3a5d8c;opacity:.8}
+/* 紙の繊維 — 固定レイヤ(pan/zoomで再ラスタライズされない) */
+#paper-grain{position:fixed;inset:0;pointer-events:none;z-index:30;opacity:.5;mix-blend-mode:overlay;transition:opacity .5s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E")}
+body.vr-view #paper-grain{opacity:0}
+/* ===== 星 ===== */
 .char-dot{cursor:pointer}
 .char-dot.locked{cursor:default;pointer-events:none}
-.dot-glow{animation:glow-pulse 2.5s ease-in-out infinite}
-@keyframes glow-pulse{0%,100%{opacity:.25;r:9}50%{opacity:.7;r:12}}
-.dot-glow-dead{animation:glow-pulse-dead 2.5s ease-in-out infinite}
-@keyframes glow-pulse-dead{0%,100%{opacity:.2;r:9}50%{opacity:.6;r:12}}
-.dot-label{opacity:0;transition:opacity .3s;pointer-events:none;font-size:7px}
-#story-overlay{position:fixed;inset:0;background:rgba(6,6,10,.93);z-index:100;display:flex;flex-direction:column;align-items:center;padding:0 20px 0;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .35s}
+/* 露光は固定 — 星は脈動しない(鎮魂の静止)。クラス名はJS互換のため残す */
+.dot-glow,.dot-glow-dead{animation:none}
+.dot-label{opacity:0;transition:opacity .3s;pointer-events:none;font-size:7px;font-family:var(--font-jp);letter-spacing:.15em}
+/* 読了の定着 / 二重露光 — 一度だけ走り、戻らない */
+.fx-ring{pointer-events:none;animation:fix-ring 1.2s cubic-bezier(.2,.6,.3,1) both}
+@keyframes fix-ring{0%{r:3;opacity:.85}100%{r:13;opacity:0}}
+.fx-cross{pointer-events:none;animation:double-expose 1.4s cubic-bezier(.2,.6,.3,1) both}
+@keyframes double-expose{0%{r:4;opacity:.9}100%{r:26;opacity:0}}
+/* 死者: 白く定着 → ゆっくり赤錆へ酸化して止まる(2段階) */
+.oxidizing{animation:oxidize 3.4s ease-in both}
+@keyframes oxidize{0%{fill:#eaf2fb}30%{fill:#eaf2fb}100%{fill:#b5654a}}
+/* 全35人読了 — 唯一の同期: 全星が一度だけ深く一呼吸 */
+body.finale .dot-glow{animation:breath 6s ease-in-out 1 both}
+@keyframes breath{0%{opacity:.22}40%{opacity:.62}62%{opacity:.62}100%{opacity:.22}}
+/* ===== 物語リーダ — アーカイブの翻刻ページ(図と明度反転) ===== */
+#story-overlay{position:fixed;inset:0;background:rgba(7,16,31,.74);z-index:100;display:flex;flex-direction:column;align-items:center;padding:0 20px;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .4s}
 #story-overlay.visible{opacity:1;pointer-events:all}
-#story-overlay[data-vr="1"]{background:radial-gradient(ellipse at 50% 0%,rgba(0,10,30,.97) 0%,rgba(4,4,16,.97) 100%)}
-#story-scroll{width:100%;max-width:680px;overflow-y:auto;flex:1;padding-top:56px;padding-bottom:32px;scrollbar-width:thin;scrollbar-color:#252535 transparent}
+#story-scroll{width:100%;max-width:720px;flex:1;margin:34px 0 26px;overflow-y:auto;background:linear-gradient(180deg,var(--arc-paper) 0%,#e6dfcc 100%);color:var(--arc-text);border:1px solid var(--arc-paper-edge);box-shadow:0 18px 60px rgba(4,10,22,.55),inset 0 0 90px rgba(160,140,95,.14);padding:50px 58px 44px;transform:perspective(1400px) rotateX(6deg) translateY(18px);opacity:0;transition:transform .55s cubic-bezier(.22,.7,.3,1),opacity .55s;scrollbar-width:thin;scrollbar-color:var(--arc-rule) transparent}
+#story-overlay.visible #story-scroll{transform:none;opacity:1}
 #story-scroll::-webkit-scrollbar{width:3px}
-#story-scroll::-webkit-scrollbar-thumb{background:#252535;border-radius:2px}
-#story-close{position:absolute;top:16px;right:20px;background:none;border:1px solid #333;color:#666;font-size:12px;padding:5px 14px;cursor:pointer;letter-spacing:.1em;z-index:10;transition:color .2s,border-color .2s;font-family:inherit}
-#story-close:hover{color:#bbb;border-color:#777}
-.ep-header{border-left:2px solid #2a2a38;padding-left:18px;margin-bottom:28px}
-.ep-char-name{font-size:11px;letter-spacing:.2em;color:#444;margin-bottom:6px}
-.ep-title{font-size:21px;font-weight:400;color:#dde;letter-spacing:.06em;margin-bottom:12px}
-.ep-meta{font-size:12px;color:#555;line-height:2}
-.ep-meta span{display:block}
-.ep-meta .m-time::before{content:"時刻 \00a0"}
-.ep-meta .m-place::before{content:"場所 \00a0"}
-.ep-meta .m-who::before{content:"語り手"}
-.ep-body{font-size:15px;line-height:2.1;color:#b0b0be;white-space:pre-wrap;letter-spacing:.03em}
-[data-vr="1"] .ep-body{color:#90b8d8}
-.ep-footer{margin-top:36px;padding-top:20px;border-top:1px solid #181820;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
-.like-btn{display:flex;align-items:center;gap:7px;background:none;border:1px solid #2a2a3a;color:#555;padding:7px 16px;cursor:pointer;border-radius:2px;font-size:13px;font-family:inherit;transition:all .2s}
-.like-btn:hover{border-color:#555;color:#aaa}
-.like-btn.liked{border-color:#666;color:#999}
+#story-scroll::-webkit-scrollbar-thumb{background:var(--arc-rule);border-radius:2px}
+#story-close{position:absolute;top:16px;right:20px;background:rgba(10,26,48,.55);border:1px solid rgba(174,196,222,.35);color:var(--ui-on-dark);font-size:12px;padding:6px 16px;cursor:pointer;letter-spacing:.12em;z-index:10;transition:color .2s,border-color .2s;font-family:var(--font-jp)}
+#story-close:hover{color:var(--cy-light);border-color:var(--ui-stamp)}
+.ep-stamp{font-family:var(--font-mono);font-size:10px;letter-spacing:.22em;color:var(--arc-pencil);border:1px solid var(--arc-rule);display:inline-block;padding:4px 11px;margin-bottom:20px}
+.ep-header{border-bottom:1px solid var(--arc-rule);padding-bottom:20px;margin-bottom:30px}
+.ep-char-name{font-size:12px;letter-spacing:.28em;color:var(--arc-text-soft);margin-bottom:8px}
+.ep-era-line{height:2px;width:64px;margin:10px 0 14px;background:var(--cy-halation)}
+.ep-title{font-size:23px;font-weight:500;color:var(--arc-text);letter-spacing:.08em;margin-bottom:14px}
+.ep-meta{font-size:12px;color:var(--arc-text-soft);line-height:2.1}
+.ep-meta span{display:block;border-bottom:1px dotted var(--arc-rule);max-width:24em;padding:2px 0}
+.ep-meta .m-time::before{content:"時刻 \00a0";color:var(--arc-pencil)}
+.ep-meta .m-place::before{content:"場所 \00a0";color:var(--arc-pencil)}
+.ep-meta .m-who::before{content:"語り手 \00a0";color:var(--arc-pencil)}
+.ep-body{font-size:17px;line-height:2.05;color:var(--arc-text);white-space:pre-wrap;letter-spacing:.04em}
+.ep-footer{margin-top:42px;padding-top:20px;border-top:1px solid var(--arc-rule);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+/* いいね = 整理者が挟む赤い綴じ紐(赤錆と同色) */
+.like-btn{display:flex;align-items:center;gap:7px;background:none;border:1px solid var(--arc-rule);color:var(--arc-text-soft);padding:7px 16px;cursor:pointer;border-radius:0;font-size:13px;font-family:var(--font-en);transition:all .25s}
+.like-btn:hover{border-color:var(--cy-dead);color:var(--cy-dead)}
+.like-btn.liked{border-color:var(--cy-dead);color:var(--cy-dead)}
 .ep-nav{display:flex;gap:10px;align-items:center}
-.nav-btn{background:none;border:1px solid #2a2a3a;color:#666;padding:7px 18px;cursor:pointer;font-size:12px;border-radius:2px;font-family:inherit;letter-spacing:.08em;transition:all .2s}
-.nav-btn:hover:not(:disabled){border-color:#666;color:#ccc}
-.nav-btn:disabled{opacity:.2;cursor:default}
-.nav-btn.next-btn{background:#10101a;border-color:#444;color:#aaa}
-.nav-btn.next-btn:hover{background:#181828;border-color:#888;color:#eee}
-.ep-indicator{font-size:11px;color:#333;letter-spacing:.1em}
-/* roster panel (#char-panel) & list button (#list-btn) removed — navigation is via map dots; styles deleted */
-#tooltip{position:fixed;background:rgba(6,6,12,.95);border:1px solid #252535;color:#888;padding:7px 12px;font-size:11px;border-radius:2px;pointer-events:none;z-index:200;opacity:0;transition:opacity .15s;max-width:230px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
-#tooltip.show{opacity:1}
-/* VR/real layer toggle removed — now content-driven per episode (see openEp) */
-#title-wrap{position:fixed;top:0;left:0;right:0;padding:18px 24px;pointer-events:none;z-index:50;background:linear-gradient(to bottom,rgba(0,0,0,.5) 0%,transparent 100%)}
-#title-wrap h1{font-size:14px;font-weight:400;color:#383845;letter-spacing:.35em}
-#title-wrap .sub{font-size:10px;color:#22222e;letter-spacing:.2em;margin-top:3px}
-#zoom-hint{position:fixed;bottom:22px;right:20px;font-size:10px;color:#252530;letter-spacing:.1em;line-height:1.9;pointer-events:none}
-#complete-note{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:300;opacity:0;transition:opacity .5s;text-align:center;font-size:13px;letter-spacing:.15em;line-height:2.2;padding:24px 40px;border:1px solid #333;background:rgba(5,5,10,.96);color:#888}
+.nav-btn{background:none;border:1px solid var(--arc-rule);color:var(--arc-text-soft);padding:7px 18px;cursor:pointer;font-size:12px;border-radius:0;font-family:var(--font-jp);letter-spacing:.08em;transition:all .25s}
+.nav-btn:hover:not(:disabled){border-color:var(--arc-text-soft);color:var(--arc-text)}
+.nav-btn:disabled{opacity:.25;cursor:default}
+.nav-btn.next-btn{background:rgba(26,43,68,.06);border-color:var(--arc-text-soft);color:var(--arc-text)}
+.nav-btn.next-btn:hover{background:rgba(26,43,68,.12);border-color:var(--arc-text)}
+.ep-indicator{font-size:11px;color:var(--arc-pencil);letter-spacing:.14em;font-family:var(--font-en)}
+/* ===== tooltip — アーカイブの整理票 ===== */
+#tooltip{position:fixed;background:var(--arc-paper);border:1px solid var(--cy-ink);color:var(--arc-text);padding:9px 14px 9px 18px;font-size:12px;border-radius:0;pointer-events:none;z-index:200;opacity:0;transform:translateY(2px);transition:opacity .18s,transform .18s;max-width:250px;line-height:1.8;white-space:pre-wrap;word-break:break-word;font-family:var(--font-jp)}
+#tooltip.show{opacity:1;transform:none}
+#tooltip::before{content:"";position:absolute;top:6px;left:6px;width:5px;height:5px;border:1px solid var(--arc-pencil);border-radius:50%;opacity:.6}
+/* ===== 図郭の題箋・整理印 ===== */
+#title-wrap{position:fixed;top:0;left:0;right:0;padding:20px 26px;pointer-events:none;z-index:50;background:linear-gradient(to bottom,rgba(10,26,48,.72) 0%,transparent 100%)}
+#title-wrap h1{font-size:15px;font-weight:500;color:var(--ui-on-dark);letter-spacing:.42em}
+#title-wrap .sub{font-size:10px;color:var(--ui-on-dark-dim);letter-spacing:.26em;margin-top:5px}
+#title-stamp{font-family:var(--font-mono);font-size:8px;letter-spacing:.22em;color:var(--ui-stamp);opacity:.7;margin-top:7px}
+#zoom-hint{position:fixed;bottom:22px;right:20px;font-size:9px;color:var(--ui-on-dark-dim);letter-spacing:.18em;line-height:2;pointer-events:none;font-family:var(--font-mono);opacity:.8}
+#complete-note{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:300;opacity:0;transition:opacity .5s;text-align:center;font-size:13px;letter-spacing:.15em;line-height:2.2;padding:26px 44px;border:1px solid var(--ui-stamp);background:rgba(10,26,48,.96);color:var(--cy-light)}
 #complete-note.show{opacity:1}
-@media(max-width:600px){#story-scroll{padding-top:48px} .ep-title{font-size:17px} .ep-body{font-size:14px}}
-/* ===== data-layer (VR) view: 層 toggle turns the whole map into a data plane ===== */
+/* ===== data-layer (VR) view — デジタイズされた青写真スキャン ===== */
 /* 層トグルは最初は隠れている。データ層に触れた時(ライのVR層 or ナギ出現)に発見的に出現する */
-#layer-btn{position:fixed;bottom:22px;left:20px;background:rgba(8,10,20,.88);border:1px solid #1b3550;color:#3a6a90;padding:9px 20px;cursor:pointer;border-radius:20px;font-size:11px;letter-spacing:.18em;z-index:50;transition:opacity .5s,transform .5s,background .25s,border-color .25s,color .25s,box-shadow .25s;font-family:inherit;opacity:0;visibility:hidden;transform:translateY(10px);pointer-events:none}
+#layer-btn{position:fixed;bottom:22px;left:20px;background:rgba(8,18,34,.9);border:1px solid #1b3550;color:#3a6a90;padding:9px 20px;cursor:pointer;border-radius:0;font-size:11px;letter-spacing:.18em;z-index:50;transition:opacity .5s,transform .5s,background .25s,border-color .25s,color .25s,box-shadow .25s;font-family:var(--font-jp);opacity:0;visibility:hidden;transform:translateY(10px);pointer-events:none}
 #layer-btn.found{opacity:1;visibility:visible;transform:none;pointer-events:auto}
 #layer-btn.reveal-pulse{animation:layer-pulse 2.4s ease-out}
 @keyframes layer-pulse{0%{box-shadow:0 0 0 0 rgba(120,200,255,.5)}70%{box-shadow:0 0 0 18px rgba(120,200,255,0)}100%{box-shadow:0 0 0 0 rgba(120,200,255,0)}}
-#layer-hint{position:fixed;bottom:62px;left:20px;max-width:236px;background:rgba(0,18,40,.95);border:1px solid #2f6f9f;color:#9fd8f5;padding:10px 14px;border-radius:6px;font-size:11px;line-height:1.85;letter-spacing:.04em;z-index:60;opacity:0;transform:translateY(8px);transition:opacity .45s,transform .45s;pointer-events:none}
+#layer-hint{position:fixed;bottom:62px;left:20px;max-width:236px;background:rgba(4,22,44,.96);border:1px solid var(--vr-grid);color:#9fd8f5;padding:10px 14px;border-radius:0;font-size:11px;line-height:1.85;letter-spacing:.04em;z-index:60;opacity:0;transform:translateY(8px);transition:opacity .45s,transform .45s;pointer-events:none}
 #layer-hint.show{opacity:1;transform:none}
 #layer-btn:hover{border-color:#3a7ab0;color:#7ac8ff}
-body.vr-view #layer-btn{background:rgba(0,22,44,.92);border-color:#2f6f9f;color:#8fdcff;box-shadow:0 0 14px rgba(80,180,255,.3)}
+body.vr-view #layer-btn{background:rgba(0,22,44,.92);border-color:var(--vr-grid);color:#8fdcff;box-shadow:0 0 14px rgba(80,180,255,.3)}
 #data-grid{opacity:0;transition:opacity .5s}
 body.vr-view #data-grid{opacity:.55}
 body.vr-view #cartography{opacity:.32;transition:opacity .5s}
 #vr-scrim{position:fixed;inset:0;z-index:40;pointer-events:none;opacity:0;transition:opacity .5s;mix-blend-mode:screen;background:linear-gradient(rgba(0,30,60,.10),rgba(0,10,30,.12)),repeating-linear-gradient(0deg,rgba(120,200,255,.045) 0px,rgba(120,200,255,.045) 1px,transparent 1px,transparent 3px)}
-body.vr-view #vr-scrim{opacity:1}
+body.vr-view #vr-scrim{opacity:1;animation:scan 8s linear infinite}
+@keyframes scan{from{background-position:0 0,0 0}to{background-position:0 0,0 96px}}
 #nexus-frame{opacity:.55;transition:opacity .5s}
 body.vr-view #nexus-frame{opacity:1}
 /* データ層では現実の軌跡・点・交差マークを隠し、ナギの記録だけの面にする */
@@ -92,30 +152,57 @@ body.vr-view #dots-layer{opacity:0;pointer-events:none;transition:opacity .5s}
 #nagi-layer .nm-hit{pointer-events:none;cursor:help}
 body.vr-view #nagi-layer{opacity:1}
 body.vr-view #nagi-layer .nm-hit{pointer-events:all}
-/* story overlay data-layer theming (when reading a VR character in VR層) */
-#story-overlay[data-vr="1"]{background:radial-gradient(ellipse at 50% 0%,rgba(0,18,42,.975) 0%,rgba(2,6,20,.98) 100%)}
-#story-overlay[data-vr="1"]::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;mix-blend-mode:screen;background:repeating-linear-gradient(0deg,rgba(120,200,255,.05) 0px,rgba(120,200,255,.05) 1px,transparent 1px,transparent 3px)}
-#story-overlay[data-vr="1"] #story-scroll{position:relative;z-index:1}
+/* story overlay data-layer theming — VR層の読書は「スキャン画面」(紙ではない) */
+#story-overlay[data-vr="1"] #story-scroll{background:radial-gradient(ellipse at 50% 0%,#06182f 0%,#04101f 100%);color:#a6cfe8;border-color:#1b3550;box-shadow:0 0 44px rgba(57,184,255,.14)}
+#story-overlay[data-vr="1"] #story-scroll::after{content:"";position:fixed;inset:0;pointer-events:none;mix-blend-mode:screen;background:repeating-linear-gradient(0deg,rgba(120,200,255,.05) 0px,rgba(120,200,255,.05) 1px,transparent 1px,transparent 3px)}
+[data-vr="1"] .ep-stamp{color:#5a9cc8;border-color:#1b3550}
+[data-vr="1"] .ep-header{border-color:#1b3550}
 [data-vr="1"] .ep-char-name{color:#3a7ab0}
 [data-vr="1"] .ep-title{color:#8fdcff;text-shadow:0 0 12px rgba(120,200,255,.45);animation:vr-flicker 5s infinite}
+[data-vr="1"] .ep-meta{color:#5a8cb4}
+[data-vr="1"] .ep-meta span{border-color:#16334e}
+[data-vr="1"] .ep-meta .m-time::before,[data-vr="1"] .ep-meta .m-place::before,[data-vr="1"] .ep-meta .m-who::before{color:#3a6a90}
 [data-vr="1"] .ep-body{color:#a6cfe8}
-@keyframes vr-flicker{0%,100%{opacity:1}47%{opacity:.94}49%{opacity:.82}51%{opacity:.96}}
-/* ===== entry gate: content warning + concept (shown once per browser) ===== */
-#entry-gate{position:fixed;inset:0;z-index:400;background:radial-gradient(ellipse at 50% 28%,#0b0d16,#06060a 78%);display:flex;align-items:center;justify-content:center;padding:24px;transition:opacity .6s}
+[data-vr="1"] .ep-footer{border-color:#16334e}
+[data-vr="1"] .like-btn,[data-vr="1"] .nav-btn{border-color:#1b3550;color:#5a8cb4}
+[data-vr="1"] .nav-btn.next-btn{background:rgba(57,184,255,.08);border-color:#2f6f9f;color:#8fdcff}
+[data-vr="1"] .ep-indicator{color:#3a6a90}
+@keyframes vr-flicker{0%,100%{opacity:1}47%{opacity:.96}49%{opacity:.88}51%{opacity:.97}}
+/* ===== entry gate — 表紙: 未現像の印画紙が感光していく ===== */
+#entry-gate{position:fixed;inset:0;z-index:400;background:radial-gradient(ellipse at 50% 30%,#0d2240 0%,var(--cy-paper-0) 76%);display:flex;align-items:center;justify-content:center;padding:24px;transition:opacity .65s}
 #entry-gate.gone{opacity:0;pointer-events:none}
-.eg-inner{max-width:560px;text-align:center}
-.eg-title{font-size:30px;letter-spacing:.4em;color:#4a4a58;margin-bottom:10px}
-.eg-sub{font-size:12px;letter-spacing:.3em;color:#2c2c3a;margin-bottom:36px}
-.eg-concept{font-size:14px;line-height:2.3;color:#8a8a98;margin-bottom:34px}
-.eg-warn{font-size:12px;line-height:2;color:#6f6f7e;border:1px solid #1f1f2a;border-radius:3px;padding:16px 18px;margin-bottom:32px;background:rgba(255,255,255,.012);text-align:left}
-.eg-warn-h{color:#94747e;letter-spacing:.2em;margin-bottom:8px;text-align:center}
-#eg-enter{background:rgba(12,12,20,.6);border:1px solid #3a3a4a;color:#aaa;padding:11px 44px;cursor:pointer;border-radius:24px;font-size:13px;letter-spacing:.3em;font-family:inherit;transition:all .25s}
-#eg-enter:hover{border-color:#888;color:#eee;background:rgba(22,22,34,.6)}
+#eg-stamp{position:absolute;top:18px;left:22px;font-family:var(--font-mono);font-size:9px;letter-spacing:.25em;line-height:2.1;color:var(--ui-stamp);opacity:0;text-align:left;animation:expose 2.4s 1.6s both}
+.eg-inner{max-width:600px;text-align:center}
+.eg-title{font-size:34px;letter-spacing:.5em;text-indent:.5em;color:var(--cy-light);margin-bottom:14px;font-weight:500;animation:expose 3.2s .2s both}
+.eg-sub{font-size:11px;letter-spacing:.5em;text-indent:.5em;color:var(--ui-stamp);margin-bottom:44px;animation:expose 3.2s .5s both}
+.eg-concept{font-size:14px;line-height:2.5;color:var(--ui-on-dark);margin-bottom:38px;animation:expose 2.6s .9s both}
+.eg-warn{font-size:12px;line-height:2.05;color:var(--ui-on-dark-dim);border:1px solid rgba(127,168,212,.26);border-radius:0;padding:18px 22px;margin-bottom:36px;background:rgba(14,38,71,.35);text-align:left;animation:expose 2.6s 1.2s both}
+.eg-warn-h{color:#b58a78;letter-spacing:.3em;margin-bottom:10px;text-align:center;font-size:11px}
+#eg-enter{background:transparent;border:1px solid var(--ui-stamp);color:var(--cy-light);padding:13px 58px;cursor:pointer;border-radius:0;font-size:13px;letter-spacing:.5em;text-indent:.5em;font-family:var(--font-jp);transition:background 1.1s,color .4s,border-color .4s;animation:expose 2.6s 1.5s both}
+#eg-enter:hover{background:rgba(234,242,251,.12);border-color:var(--cy-light)}
+@keyframes expose{0%{opacity:0;filter:blur(4px)}100%{opacity:1;filter:blur(0)}}
+/* ===== mobile ===== */
+@media(pointer:coarse){#zoom-hint{display:none}}
+@media(max-width:640px){
+  #story-overlay{padding:0}
+  #story-scroll{margin:0;max-width:none;border:none;padding:54px 22px 40px}
+  .ep-title{font-size:19px}
+  .ep-body{font-size:16px;line-height:1.95}
+  #paper-grain{opacity:.35}
+  #title-wrap h1{font-size:13px}
+  .eg-title{font-size:24px}
+  body.vr-view #vr-scrim{animation:none}
+}
+/* ===== reduced motion: 全ての感光を瞬間遷移に縮約 ===== */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01s!important;animation-delay:0s!important;transition-duration:.01s!important}
+}
 </style>
 </head>
 <body>
 
 <div id="entry-gate">
+  <div id="eg-stamp">CYANOTYPE ARCHIVE<br>35 TESTIMONIES OF WAR<br>SEIZA NO KISEKI</div>
   <div class="eg-inner">
     <div class="eg-title">星座の軌跡</div>
     <div class="eg-sub">35の戦時の証</div>
@@ -128,7 +215,9 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
 <div id="title-wrap">
   <h1>星座の軌跡</h1>
   <div class="sub" id="sub-count"></div>
+  <div id="title-stamp">CYANOTYPE ARCHIVE</div>
 </div>
+<div id="paper-grain"></div>
 
 <div id="map-root">
   <div id="map-stage">
@@ -141,7 +230,7 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
       <rect width="900" height="540" fill="#06070c"/>
       <rect width="900" height="540" fill="#0a0c14" opacity=".4" filter="url(#tf)"/>
       <!-- Procedural cartography: coasts, depth/elevation contours, rivers, graticule, frame -->
-      <g id="cartography"><defs><pattern id="sandStipple" patternUnits="userSpaceOnUse" width="11" height="11"><rect width="11" height="11" fill="#e7e7e7"/><circle cx="2.5" cy="2.5" r="1.0" fill="#b9b9b9"/><circle cx="7.5" cy="5.5" r="1.0" fill="#b9b9b9"/><circle cx="4.5" cy="9" r="0.9" fill="#b9b9b9"/></pattern></defs><rect x="0" y="0" width="2000" height="1120" fill="#080b11"/>
+      <g id="cy-base"><rect width="2000" height="1120" fill="#0e2647"/><rect width="2000" height="1120" fill="#173a6b" mask="url(#land)"/></g><g id="cartography"><defs><pattern id="sandStipple" patternUnits="userSpaceOnUse" width="11" height="11"><rect width="11" height="11" fill="#e7e7e7"/><circle cx="2.5" cy="2.5" r="1.0" fill="#b9b9b9"/><circle cx="7.5" cy="5.5" r="1.0" fill="#b9b9b9"/><circle cx="4.5" cy="9" r="0.9" fill="#b9b9b9"/></pattern></defs><rect x="0" y="0" width="2000" height="1120" fill="#080b11"/>
       <defs><symbol id="relief-mount-2-bw" viewBox="-5 -5 50 50">
             <polygon fill="#fff" stroke="#5c5c70" stroke-width=".2" points="23.2198,13.2844 25.0296,15.5958 25.7023,16.6348 26.9007,17.3503 27.6924,18.8671 28.6339,19.544 29.6416,21.2874 30.1793,22.9204 30.7341,23.1774 31.5491,24.0589 31.9489,25.0324 32.4734,26.4994 33.8428,27.4678 34.673,28.5353 34.8847,28.7856 34.8285,28.9234 29.5625,31.5852 22.3428,32.6 17.9672,32.2587 6.7332,31.3779 4.2787,30.6699 0.3152,28.4746 6.2326,22.923 6.8631,18.7876 8.5478,17.0127 9.4447,14.5301 10.1033,13.4603 10.0987,12.7193 10.3459,12.4623 10.8502,12.3291 11.2616,9.4996 12.2382,9.5462 12.8014,9.7331 13.2941,9.6207 13.6109,9.8041 14.1481,9.9827 15.2052,7.9497 15.8578,7.6333 16.1761,6.4592 16.6967,5.5584 17.9672,2.6 19.2707,4.5745 23.008,12.5807 "></polygon>
             <polygon fill="#a6a6a6" points="23.2198,13.2844 25.0296,15.5958 25.7023,16.6348 26.9007,17.3503 27.6924,18.8671 28.6339,19.544 29.6416,21.2874 30.1793,22.9204 30.7341,23.1774 31.5491,24.0589 31.9489,25.0324 32.4734,26.4994 33.8428,27.4678 34.673,28.5353 34.8847,28.7856 34.8285,28.9234 29.5625,31.5852 22.3428,32.6 17.9672,32.2587 21.0737,27.7521 21.7612,26.7547 21.895,24.2875 20.5482,19.4183 18.3111,15.2733 19.9099,12.3973 17.9672,2.6 19.2707,4.5745 23.008,12.5807 "></polygon>
@@ -353,6 +442,8 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
       
       
     <g id="kirishima-cut"><path d="M816.0,302.0 L816.9,302.0 L817.5,302.2 L817.9,302.7 L818.2,303.4 L818.3,304.2 L818.4,305.0 L818.4,305.9 L818.5,306.7 L818.7,307.4 L819.0,308.0 L819.4,308.4 L819.8,308.8 L820.3,309.2 L820.8,309.5 L821.2,309.8 L821.8,310.1 L822.3,310.3 L822.8,310.6 L823.4,310.8 L824.0,311.0 L824.6,311.2 L825.2,311.2 L825.8,311.3 L826.5,311.3 L827.1,311.3 L827.8,311.3 L828.5,311.4 L829.3,311.5 L830.1,311.7 L831.0,312.0 L831.9,312.5 L833.0,313.1 L834.0,313.9 L835.2,314.7 L836.3,315.5 L837.5,316.4 L838.6,317.1 L839.8,317.7 L840.9,318.1 L842.0,318.2 L843.0,318.1 L844.1,317.7 L845.1,317.2 L846.1,316.5 L847.1,315.7 L848.0,314.9 L849.0,314.1 L850.0,313.3 L851.0,312.6 L852.0,312.1 L853.0,311.7 L854.0,311.4 L855.0,311.1 L856.0,310.8 L857.0,310.6 L858.0,310.4 L859.0,310.2 L860.0,309.9 L861.0,309.6 L862.0,309.3 L863.0,308.9 L864.0,308.5 L865.0,308.0 L866.0,307.5 L867.0,306.9 L868.0,306.4 L869.0,305.9 L870.0,305.5 L871.0,305.1 L872.0,304.7 L873.0,304.4 L874.0,304.1 L875.0,303.9 L876.0,303.7 L877.0,303.5 L878.0,303.3 L879.0,303.2 L880.0,303.0 L881.0,302.9 L882.0,302.8 L883.0,302.7 L884.0,302.6 L885.0,302.5 L886.0,302.4 L887.0,302.3 L888.0,302.3 L889.0,302.3 L890.0,302.3 L891.0,302.4 L892.0,302.5 L893.0,302.7 L894.0,303.0 L895.0,303.4 L896.0,303.8 L897.0,304.3 L898.0,304.7 L899.0,305.2 L900.0,305.5 L901.0,305.8 L902.0,306.0 L903.0,306.1 L904.0,306.1 L905.0,306.1 L906.0,306.0 L907.0,305.9 L908.0,305.8 L909.0,305.6 L910.0,305.4 L911.0,305.2 L912.0,305.0 L913.0,304.8 L914.0,304.5 L915.0,304.1 L916.0,303.8 L917.0,303.4 L918.0,303.0 L919.0,302.7 L920.0,302.4 L921.0,302.1 L922.0,301.9 L923.0,301.8 L924.0,301.7 L925.0,301.6 L926.0,301.5 L927.0,301.5 L928.0,301.5 L929.0,301.6 L930.0,301.6 L931.0,301.6 L932.0,301.7 L933.0,301.8 L934.0,301.9 L935.0,302.0 L936.0,302.1 L937.0,302.2 L938.0,302.4 L939.0,302.6 L940.0,302.7 L941.0,302.9 L942.0,303.0 L943.0,303.1 L944.0,303.3 L945.0,303.4 L946.0,303.6 L947.0,303.7 L948.0,303.9 L949.0,304.0 L950.0,304.2 L951.0,304.3 L952.0,304.4 L953.0,304.5 L954.0,304.5 L955.0,304.4 L956.0,304.4 L957.0,304.4 L958.0,304.4 L959.0,304.4 L960.0,304.5 L961.0,304.7 L962.0,305.0 L963.0,305.4 L964.0,305.9 L965.0,306.5 L966.0,307.1 L967.0,307.8 L968.0,308.5 L969.0,309.3 L970.0,310.1 L971.0,310.8 L972.0,311.6 L973.0,312.4 L974.0,313.3 L975.0,314.2 L976.0,315.2 L977.0,316.2 L978.0,317.1 L979.0,318.0 L980.0,318.8 L981.0,319.5 L982.0,320.0 L983.0,320.4 L983.9,320.7 L984.9,321.0 L985.8,321.1 L986.8,321.2 L987.7,321.2 L988.7,321.1 L989.7,320.9 L990.8,320.7 L992.0,320.3 L993.3,319.8 L994.7,319.1 L996.1,318.2 L997.6,317.3 L999.2,316.3 L1000.7,315.3 L1002.2,314.3 L1003.6,313.4 L1004.9,312.6 L1006.0,312.0 L1007.0,311.6 L1007.9,311.2 L1008.6,311.0 L1009.4,310.8 L1010.0,310.7 L1010.6,310.6 L1011.2,310.5 L1011.8,310.4 L1012.4,310.3 L1013.0,310.0 L1013.7,309.7 L1014.3,309.3 L1015.0,309.0 L1015.7,308.6 L1016.3,308.2 L1016.9,307.8 L1017.5,307.3 L1018.1,306.9 L1018.6,306.4 L1019.0,306.0 L1019.3,305.5 L1019.4,304.8 L1019.5,304.1 L1019.5,303.4 L1019.4,302.7 L1019.5,302.0 L1019.6,301.5 L1019.8,301.1 L1020.3,300.9 L1021.0,301.0 L1022.0,301.3 L1023.3,301.7 L1024.7,302.3 L1026.4,303.1 L1028.1,303.9 L1029.8,304.9 L1031.5,306.1 L1033.2,307.3 L1034.7,308.6 L1036.0,310.0 L1037.2,311.6 L1038.5,313.3 L1039.7,315.2 L1040.9,317.2 L1042.0,319.3 L1043.0,321.5 L1043.8,323.7 L1044.4,325.8 L1044.9,328.0 L1045.0,330.0 L1044.9,332.1 L1044.5,334.4 L1043.9,336.8 L1043.1,339.3 L1042.2,341.7 L1041.1,343.9 L1039.9,346.0 L1038.7,347.7 L1037.3,349.1 L1036.0,350.0 L1034.5,350.4 L1032.8,350.2 L1031.0,349.6 L1029.1,348.7 L1027.1,347.7 L1025.1,346.5 L1023.1,345.4 L1021.2,344.4 L1019.5,343.6 L1018.0,343.2 L1016.7,343.1 L1015.5,343.2 L1014.4,343.5 L1013.4,343.9 L1012.5,344.4 L1011.6,344.9 L1010.7,345.3 L1009.9,345.7 L1009.0,345.9 L1008.0,346.0 L1007.0,345.9 L1006.0,345.7 L1005.0,345.4 L1004.0,345.1 L1003.0,344.7 L1002.0,344.2 L1001.0,343.8 L1000.0,343.4 L999.0,343.0 L998.0,342.7 L997.0,342.4 L996.0,342.1 L995.0,341.7 L994.0,341.4 L993.0,341.1 L992.0,340.8 L991.0,340.6 L990.0,340.5 L989.0,340.4 L988.0,340.5 L987.0,340.7 L986.0,341.1 L985.0,341.5 L984.0,342.1 L983.0,342.7 L982.0,343.3 L981.0,343.9 L980.0,344.5 L979.0,345.1 L978.0,345.5 L977.0,345.9 L976.0,346.2 L975.0,346.5 L974.0,346.8 L973.0,347.1 L972.0,347.3 L971.0,347.6 L970.0,347.8 L969.0,348.1 L968.0,348.3 L967.0,348.5 L966.0,348.7 L965.0,348.9 L964.0,349.1 L963.0,349.3 L962.0,349.5 L961.0,349.7 L960.0,349.9 L959.0,350.2 L958.0,350.5 L957.0,350.8 L956.0,351.2 L955.0,351.6 L954.0,352.0 L953.0,352.4 L952.0,352.9 L951.0,353.3 L950.0,353.8 L949.0,354.4 L948.0,354.9 L947.0,355.5 L946.0,356.2 L945.0,357.0 L944.0,357.8 L943.0,358.6 L942.0,359.4 L941.0,360.1 L940.0,360.7 L939.0,361.2 L938.0,361.6 L937.0,361.8 L936.0,361.9 L935.0,361.9 L934.0,361.7 L933.0,361.6 L932.0,361.3 L931.0,361.1 L930.0,360.8 L929.0,360.5 L928.0,360.3 L927.0,360.1 L926.0,359.8 L925.0,359.5 L924.0,359.2 L923.0,358.9 L922.0,358.6 L921.0,358.3 L920.0,357.9 L919.0,357.6 L918.0,357.2 L917.0,356.8 L916.0,356.4 L915.0,355.9 L914.0,355.5 L913.0,355.0 L912.0,354.5 L911.0,354.1 L910.0,353.7 L909.0,353.3 L908.0,353.0 L907.0,352.8 L906.0,352.6 L905.0,352.5 L904.0,352.4 L903.0,352.4 L902.0,352.3 L901.0,352.2 L900.0,352.1 L899.0,352.0 L898.0,351.8 L897.0,351.5 L896.0,351.2 L895.0,350.9 L894.0,350.6 L893.0,350.2 L892.0,349.8 L891.0,349.4 L890.0,349.0 L889.0,348.6 L888.0,348.2 L887.0,347.8 L886.0,347.3 L885.0,346.9 L884.0,346.4 L883.0,345.9 L882.0,345.4 L881.0,345.0 L880.0,344.6 L879.0,344.3 L878.0,344.1 L877.0,344.0 L876.0,343.9 L875.0,343.9 L874.0,344.0 L873.0,344.1 L872.0,344.2 L871.0,344.4 L870.0,344.6 L869.0,344.7 L868.0,344.9 L867.0,345.1 L866.0,345.4 L865.0,345.7 L864.0,346.0 L863.0,346.4 L862.0,346.7 L861.0,347.0 L860.0,347.2 L859.0,347.3 L858.0,347.4 L857.0,347.4 L856.0,347.2 L855.0,347.0 L854.0,346.8 L853.0,346.5 L852.0,346.2 L851.0,345.9 L850.0,345.5 L849.0,345.1 L848.0,344.8 L847.0,344.4 L846.0,344.0 L845.0,343.6 L844.0,343.1 L843.0,342.6 L842.0,342.1 L841.0,341.7 L840.0,341.3 L839.0,340.9 L838.0,340.6 L837.0,340.4 L836.0,340.2 L835.0,340.0 L834.0,339.9 L833.0,339.8 L832.0,339.7 L831.0,339.6 L830.0,339.5 L829.0,339.5 L828.0,339.4 L827.0,339.3 L826.0,339.3 L825.0,339.3 L824.0,339.3 L823.0,339.4 L822.0,339.4 L821.0,339.4 L820.0,339.3 L819.0,339.2 L818.0,339.1 L817.0,338.8 L816.0,338.5 L815.0,338.0 L814.0,337.4 L813.0,336.9 L812.0,336.4 L811.0,336.1 L810.0,335.9 L809.0,335.9 L808.0,336.2 L807.0,336.9 L805.9,338.1 L804.9,339.6 L803.8,341.3 L802.8,343.0 L801.7,344.7 L800.7,346.2 L799.7,347.3 L798.8,348.0 L798.0,348.0 L797.2,347.4 L796.4,346.3 L795.5,344.8 L794.7,342.9 L794.0,340.9 L793.3,338.6 L792.8,336.3 L792.4,334.1 L792.1,331.9 L792.0,330.0 L792.1,328.2 L792.2,326.3 L792.5,324.3 L793.0,322.4 L793.5,320.5 L794.2,318.6 L794.9,316.8 L795.8,315.1 L796.9,313.5 L798.0,312.0 L799.4,310.6 L801.1,309.2 L803.0,307.9 L805.1,306.7 L807.2,305.5 L809.3,304.5 L811.3,303.6 L813.2,302.8 L814.8,302.3 Z" fill="#080b11"/><path d="M917.8,332.0 L917.9,332.7 L917.9,333.4 L917.8,334.1 L917.7,334.8 L917.4,335.4 L917.1,336.0 L916.8,336.5 L916.3,337.1 L915.7,337.5 L915.1,337.9 L914.5,338.3 L913.9,338.4 L913.4,338.4 L912.9,338.3 L912.4,338.0 L911.9,337.7 L911.3,337.4 L910.7,337.1 L910.1,336.9 L909.3,336.7 L908.5,336.4 L907.7,336.2 L907.0,335.9 L906.5,335.5 L906.1,335.0 L905.7,334.4 L905.5,333.8 L905.3,333.2 L905.3,332.6 L905.3,332.0 L905.5,331.5 L905.8,331.0 L906.2,330.6 L906.7,330.1 L907.2,329.7 L907.6,329.2 L908.1,328.7 L908.5,328.2 L908.9,327.7 L909.4,327.2 L909.8,326.8 L910.3,326.6 L910.7,326.5 L911.2,326.7 L911.7,326.9 L912.3,327.2 L912.8,327.4 L913.2,327.6 L913.7,327.7 L914.2,327.7 L914.6,327.6 L915.1,327.7 L915.5,327.8 L915.9,328.0 L916.3,328.5 L916.7,329.1 L917.1,329.8 L917.4,330.5 L917.7,331.3 Z" fill="#9a9a9a"/><path d="M864.0,331.0 L863.9,331.4 L863.8,331.8 L863.7,332.3 L863.6,332.7 L863.4,333.0 L863.2,333.3 L863.0,333.5 L862.8,333.6 L862.6,333.7 L862.4,333.8 L862.1,333.8 L861.8,333.8 L861.5,333.9 L861.1,333.9 L860.7,333.9 L860.4,333.9 L860.0,333.8 L859.6,333.8 L859.3,333.7 L859.0,333.6 L858.7,333.5 L858.4,333.4 L858.2,333.2 L858.0,333.0 L857.8,332.7 L857.7,332.4 L857.6,332.1 L857.6,331.7 L857.6,331.4 L857.6,331.0 L857.7,330.6 L857.8,330.1 L858.0,329.7 L858.2,329.3 L858.4,328.9 L858.7,328.6 L858.9,328.4 L859.1,328.3 L859.4,328.2 L859.6,328.2 L859.9,328.2 L860.2,328.2 L860.4,328.1 L860.7,328.1 L861.0,328.1 L861.2,328.1 L861.5,328.1 L861.8,328.1 L862.1,328.1 L862.5,328.1 L862.8,328.1 L863.2,328.2 L863.4,328.3 L863.7,328.5 L863.8,328.8 L863.9,329.2 L864.0,329.6 L864.0,330.1 L864.0,330.6 Z" fill="#9a9a9a"/><path d="M981.9,336.0 L982.0,336.4 L982.0,336.7 L982.0,337.0 L981.9,337.3 L981.7,337.6 L981.5,337.9 L981.2,338.2 L980.8,338.5 L980.3,338.8 L979.8,339.0 L979.3,339.3 L978.9,339.5 L978.5,339.8 L978.2,340.0 L977.9,340.2 L977.6,340.4 L977.3,340.5 L976.9,340.4 L976.5,340.3 L976.1,340.0 L975.6,339.7 L975.1,339.3 L974.7,338.9 L974.4,338.5 L974.2,338.1 L974.0,337.7 L973.9,337.3 L973.9,336.8 L973.8,336.4 L973.9,336.0 L974.0,335.6 L974.2,335.2 L974.5,334.9 L974.8,334.5 L975.1,334.1 L975.4,333.7 L975.7,333.3 L975.9,332.9 L976.2,332.4 L976.4,332.0 L976.7,331.6 L977.0,331.4 L977.3,331.2 L977.6,331.2 L978.0,331.2 L978.3,331.3 L978.6,331.4 L978.9,331.5 L979.2,331.8 L979.5,332.0 L979.7,332.3 L980.0,332.7 L980.2,333.0 L980.5,333.4 L980.7,333.8 L981.0,334.3 L981.3,334.7 L981.6,335.2 L981.8,335.6 Z" fill="#9a9a9a"/></g></g>
+      <!-- 陸の青ティント (Azgaar原図の上から陸だけ藍に寄せる。filter不使用) -->
+      <g id="cy-tint" pointer-events="none"><rect width="2000" height="1120" fill="#13325c" opacity="0.45" mask="url(#land)"/></g>
       <!-- Character dots (JS) -->
       <g id="dots-layer"></g>
     </svg>
@@ -443,6 +534,20 @@ const NAGI_MARKS=[
 
 // Stories — Phase 1 (chars 01–03 only)
 let STORIES = {};
+
+// ===== CYANOTYPE PALETTE (CSS :root と対で管理 — canvasはCSS変数を解決できないためJS側にも持つ) =====
+const CY={
+  light:'#eaf2fb', halation:'#9fc6ef', trail:'#d8e6f5', fresh:'#ffffff',
+  ink:'#0a2d5e', dead:'#b5654a', deadHalo:'#7a3b2c', cross:'#ffffff', crossAura:'#bcd8f4',
+  vrLine:'#39b8ff', vrHi:'#bfeaff', faint:'#3f5c84'
+};
+// 時代の色温度 — 黒体放射の転用: 古い記憶ほど冷めて赤く(温白)、新しいほど青白く熱い
+const ERA_STOPS=[[500,'#f2e7cf'],[1200,'#e9e2d2'],[1700,'#e3e9ec'],[1950,'#dbe8f6']];
+function eraColor(era){
+  const y=parseInt((era.match(/AE (\d+)/)||[,2000])[1]);
+  for(const [t,c] of ERA_STOPS) if(y<t) return c;
+  return '#cfe2fb';
+}
 
 // ===== STATE =====
 const st = {
@@ -565,22 +670,34 @@ function drawTrails(){
       ctx.strokeStyle=col;ctx.globalAlpha=alpha;ctx.lineWidth=w;
       ctx.setLineDash(dash||[]);ctx.stroke();ctx.setLineDash([]);
     };
-    // per-segment: VR-layer segments are a cyan "data" trail; real segments keep era styling.
+    // per-segment: VR-layer segments are a cyan "data" trail; real segments are EXPOSED LIGHT.
+    // 感光の物理: 読んだ道だけが白く焼き付く。最新区間のみ純白+ハレーション(まだ濡れて光る)。
     // the 層 (data-layer) view fades the real world and lets the VR trail glow.
+    const eraCore=eraColor(c.era);
     for(let i=0;i<seg;i++){
       const f=c.waypoints[i].coord,t=c.waypoints[i+1].coord;
       const vr=c.waypoints[i+1].layer==='vr';
       if(vv&&!vr)continue;          // データ層では現実の軌跡を描かない(VR/データの軌跡だけ残す)
       const fade=vv?(vr?1:.2):1;
+      const isFresh=st.fresh&&st.fresh.id===c.id&&i===st.fresh.idx;
       if(vr){
-        seg2(f,t,3.4,'#39b8ff',(isHover?.5:.32)*(vv?1:.85));
-        seg2(f,t,1.3,'#bfeaff',isHover?1:.9);
+        seg2(f,t,3.4,CY.vrLine,(isHover?.5:.32)*(vv?1:.85));
+        seg2(f,t,1.3,CY.vrHi,isHover?1:.9);
       }else if(isHover){
-        seg2(f,t,3.4,'#ffce6e',.30*fade);seg2(f,t,1.6,'#ffce6e',1*fade);
+        ctx.shadowBlur=6;ctx.shadowColor=CY.crossAura;
+        seg2(f,t,3.2,CY.fresh,.26*fade);seg2(f,t,1.4,CY.fresh,.95*fade);
+        ctx.shadowBlur=0;
+      }else if(isFresh){
+        // 最新の露光 — 定着アニメ(k:0→1)を経て純白に焼き付く
+        const k=st.fresh.k==null?1:st.fresh.k;
+        ctx.shadowBlur=8;ctx.shadowColor=CY.crossAura;
+        seg2(f,t,3.4,CY.fresh,(.12+.78*k)*a*fade);
+        ctx.shadowBlur=0;
+        seg2(f,t,1.2,CY.fresh,(.2+.8*k)*fade);
       }else if(done){
-        seg2(f,t,2.2,'#cdd0ea',a*.22*fade);seg2(f,t,1.05,'#cdd0ea',a*fade);
+        seg2(f,t,3.0,CY.halation,a*.16*fade);seg2(f,t,1.1,eraCore,a*fade);
       }else{
-        seg2(f,t,1,'#8b8ba6',a*.55*fade,[3,5]);
+        seg2(f,t,2.6,CY.halation,a*.10*fade);seg2(f,t,0.9,CY.trail,a*.8*fade);
       }
     }
     ctx.globalAlpha=1;
@@ -603,15 +720,34 @@ function clearHover(){
   document.getElementById('hover-ring').setAttribute('opacity','0');
 }
 
-function drawGlobalBonus(){
+function bonusLinks(){
   const pts=CHARS.filter(c=>isComplete(c.id)&&c.waypoints.length).flatMap(c=>{
     const idx=Math.min(getProg(c.id).read.length,c.waypoints.length-1);
     return [c.waypoints[idx].coord];
   });
-  ctx.globalAlpha=.035;ctx.strokeStyle='#ffffff';ctx.lineWidth=.8;
+  const links=[];
   for(let i=0;i<pts.length-1;i++){
     const d=Math.hypot(pts[i+1][0]-pts[i][0],pts[i+1][1]-pts[i][1]);
-    if(d<180){ctx.beginPath();ctx.moveTo(pts[i][0],pts[i][1]);ctx.lineTo(pts[i+1][0],pts[i+1][1]);ctx.stroke();}
+    if(d<180)links.push([pts[i],pts[i+1]]);
+  }
+  return links;
+}
+function drawGlobalBonus(){
+  // 全読了の星々を結ぶ大星座。フィナーレ中(st.finaleP<1)は端から順に「現像」されていく
+  const links=bonusLinks();
+  const p=st.finaleP==null?1:st.finaleP;
+  const n=Math.floor(links.length*p);
+  ctx.strokeStyle=CY.light;ctx.lineWidth=.8;
+  for(let i=0;i<n;i++){
+    ctx.globalAlpha=st.finaleP!=null&&st.finaleP<1?.16:.05;
+    ctx.beginPath();ctx.moveTo(links[i][0][0],links[i][0][1]);ctx.lineTo(links[i][1][0],links[i][1][1]);ctx.stroke();
+  }
+  // 現像の先端 — 部分描画される現在の一本
+  if(st.finaleP!=null&&st.finaleP<1&&n<links.length){
+    const frac=links.length*p-n,[f,t]=links[n];
+    ctx.globalAlpha=.5;
+    ctx.beginPath();ctx.moveTo(f[0],f[1]);
+    ctx.lineTo(f[0]+(t[0]-f[0])*frac,f[1]+(t[1]-f[1])*frac);ctx.stroke();
   }
   ctx.globalAlpha=1;
 }
@@ -658,10 +794,26 @@ function renderDots(){
     m.addEventListener('mouseenter',e=>tip(e,txt));m.addEventListener('mousemove',e=>tip(e,txt));m.addEventListener('mouseleave',hideTip);
     dotsL.appendChild(m);
   };
-  SAME_ORIGIN.forEach(s=>addMark(s.coord[0],s.coord[1],16,'#333340','0.4','0.5','2,4',s.tip));
-  CROSS_POINTS.forEach(cp=>{if(isComplete(cp.chars[0])&&isComplete(cp.chars[1]))addMark(cp.coord[0],cp.coord[1],14,'#606070','0.5','0.6',null,cp.tip);});
+  SAME_ORIGIN.forEach(s=>addMark(s.coord[0],s.coord[1],16,'#2e4d7a','0.4','0.6','2,4',s.tip));
+  // 二重露光の定着跡 — 二本の感光線が同一点で重なり、紙が最も白く抜けた所。
+  // 加害の交差には白い滲みの芯にかすかな赤錆を一滴(言葉にせず血の記憶を示す)
+  const NS_SVG='http://www.w3.org/2000/svg';
+  const addDot=(x,y,r,fill,op)=>{const d=document.createElementNS(NS_SVG,'circle');
+    d.setAttribute('cx',x);d.setAttribute('cy',y);d.setAttribute('r',r);
+    d.setAttribute('fill',fill);d.setAttribute('opacity',op);d.style.pointerEvents='none';dotsL.appendChild(d);};
+  CROSS_POINTS.forEach(cp=>{
+    if(!(isComplete(cp.chars[0])&&isComplete(cp.chars[1])))return;
+    const harm=/加害|撃つ|虐殺|処刑/.test(cp.tip);
+    addMark(cp.coord[0],cp.coord[1],14,'#bcd8f4','0.4','0.28',null,cp.tip);  // 外輪 + hit
+    addDot(cp.coord[0],cp.coord[1],2.0,harm?'#e8cfc2':'#ffffff','0.92');     // 焼き切れた芯
+    const m=document.createElementNS(NS_SVG,'circle');                        // 内輪
+    m.setAttribute('cx',cp.coord[0]);m.setAttribute('cy',cp.coord[1]);m.setAttribute('r',8);
+    m.setAttribute('fill','none');m.setAttribute('stroke',harm?'#b5654a':'#bcd8f4');
+    m.setAttribute('stroke-width','0.5');m.setAttribute('opacity',harm?'0.4':'0.5');
+    m.style.pointerEvents='none';dotsL.appendChild(m);
+  });
   // ライ(留まる者)とナギ(歩く者): 同じ廃墟城塞から、意識は別次元へ / 足は世界へ
-  if(nagiUnlocked())addMark(1650,805,19,'#4a6fa0','0.6','0.7','3,4',"同じ廃墟城塞から\n留まる者ライ — 意識は別次元へ\n歩く者ナギ — 足は世界へ");
+  if(nagiUnlocked())addMark(1650,805,19,'#5a86b8','0.6','0.7','3,4',"同じ廃墟城塞から\n留まる者ライ — 意識は別次元へ\n歩く者ナギ — 足は世界へ");
 
   // ナギの記録/道標 — 専用レイヤ(#nagi-layer)。データ層(vr-view)でのみ可視・操作可。当たり判定は広め
   const nagiL=document.getElementById('nagi-layer');
@@ -714,7 +866,7 @@ function renderDots(){
   // hover ring (recreated each render; moved onto the active dot by setHover)
   const hr=document.createElementNS('http://www.w3.org/2000/svg','circle');
   hr.setAttribute('id','hover-ring');hr.setAttribute('r','6.5');hr.setAttribute('fill','none');
-  hr.setAttribute('stroke','#ffce6e');hr.setAttribute('stroke-width','1.2');
+  hr.setAttribute('stroke',CY.fresh);hr.setAttribute('stroke-width','1.2');
   hr.setAttribute('opacity','0');hr.style.pointerEvents='none';dotsL.appendChild(hr);
 
   CHARS.forEach(c=>{
@@ -726,8 +878,10 @@ function renderDots(){
     const wpIdx=curIdx(c);
     const real=c.waypoints[wpIdx].coord;
     const [cx,cy]=DP[c.id]||real;   // declustered display position (no two stars overlap)
-    const col=dead?'#ef5350':done?'#eef0ff':hasStory?'#8fa8c8':'#3a3a48';
-    const nodeCol=done?'#dfe0f2':'#8fa8c8';
+    const reading=p.read.length>0&&!done;
+    const ec=eraColor(c.era);
+    const col=dead?CY.dead:done?CY.light:hasStory?ec:CY.faint;
+    const nodeCol=done?CY.trail:CY.halation;
 
     const g=document.createElementNS('http://www.w3.org/2000/svg','g');
     g.setAttribute('class',`char-dot${hasStory?'':' locked'}`);
@@ -742,24 +896,50 @@ function renderDots(){
     }
 
     if(hasStory){
+      // ハレーション(露光の滲み)。露光は固定 — 脈動しない
       const aura=document.createElementNS('http://www.w3.org/2000/svg','circle');
       aura.setAttribute('cx',cx);aura.setAttribute('cy',cy);aura.setAttribute('r',done?'6':'4');
-      aura.setAttribute('fill',col);aura.setAttribute('opacity',done?'.2':'.06');
+      aura.setAttribute('fill',dead?CY.deadHalo:col);
+      aura.setAttribute('opacity',dead?'.34':done?'.24':reading?'.12':'.07');
       aura.setAttribute('filter','url(#glw)');
       aura.setAttribute('class',dead?'dot-glow-dead':'dot-glow');
-      aura.style.pointerEvents='none';   // glow may pulse & overlap, but never steals a click
+      aura.style.pointerEvents='none';   // glow may overlap, but never steals a click
       g.appendChild(aura);
-      const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      ring.setAttribute('cx',cx);ring.setAttribute('cy',cy);ring.setAttribute('r','3.2');
-      ring.setAttribute('fill','none');ring.setAttribute('stroke',col);
-      ring.setAttribute('stroke-width',done?'0.8':'0.5');ring.setAttribute('opacity',done?'.6':'.36');
-      ring.style.pointerEvents='none';
-      g.appendChild(ring);
+      if(done){
+        // 読了 = 二重リング(外:ハレーション / 内:感光白)が沈着した定着跡
+        const ro=document.createElementNS('http://www.w3.org/2000/svg','circle');
+        ro.setAttribute('cx',cx);ro.setAttribute('cy',cy);ro.setAttribute('r','4.8');
+        ro.setAttribute('fill','none');ro.setAttribute('stroke',dead?CY.dead:CY.halation);
+        ro.setAttribute('stroke-width','0.55');ro.setAttribute('opacity','.5');
+        ro.style.pointerEvents='none';g.appendChild(ro);
+        const ri=document.createElementNS('http://www.w3.org/2000/svg','circle');
+        ri.setAttribute('cx',cx);ri.setAttribute('cy',cy);ri.setAttribute('r','3.1');
+        ri.setAttribute('fill','none');ri.setAttribute('stroke',col);
+        ri.setAttribute('stroke-width','0.8');ri.setAttribute('opacity','.72');
+        ri.style.pointerEvents='none';g.appendChild(ri);
+      }else{
+        const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');
+        ring.setAttribute('cx',cx);ring.setAttribute('cy',cy);ring.setAttribute('r','3.2');
+        ring.setAttribute('fill','none');ring.setAttribute('stroke',col);
+        ring.setAttribute('stroke-width','0.5');ring.setAttribute('opacity',reading?'.45':'.3');
+        ring.style.pointerEvents='none';
+        g.appendChild(ring);
+      }
+      if(dead){
+        // 静止した十字光条 — 碑のように動かない(青地で沈む赤錆の識別性を形で補う)
+        const sp=document.createElementNS('http://www.w3.org/2000/svg','path');
+        sp.setAttribute('d',`M ${cx-6.5} ${cy} H ${cx+6.5} M ${cx} ${cy-6.5} V ${cy+6.5}`);
+        sp.setAttribute('stroke',CY.dead);sp.setAttribute('stroke-width','0.5');
+        sp.setAttribute('opacity','.55');sp.style.pointerEvents='none';
+        g.appendChild(sp);
+      }
     }
     const core=document.createElementNS('http://www.w3.org/2000/svg','circle');
-    core.setAttribute('cx',cx);core.setAttribute('cy',cy);core.setAttribute('r',hasStory?'1.9':'1.1');
-    core.setAttribute('fill',col);core.setAttribute('opacity',hasStory?'1':'.25');
-    core.setAttribute('stroke','#0b0d14');core.setAttribute('stroke-width','0.7'); // dark edge pops on light land
+    core.setAttribute('cx',cx);core.setAttribute('cy',cy);
+    core.setAttribute('r',done?'2.4':reading?'2.0':hasStory?'1.7':'1.1');
+    core.setAttribute('fill',col);core.setAttribute('opacity',done?'1':reading?'.95':hasStory?'.8':'.25');
+    core.setAttribute('stroke',CY.ink);core.setAttribute('stroke-width','0.6'); // 藍の縁取り(凹版の沈線)
+    core.setAttribute('class','star-core');
     core.style.pointerEvents='none';
     g.appendChild(core);
     // bounded transparent hit target: comfortable to tap, small enough never to blanket a neighbour
@@ -841,8 +1021,10 @@ function openEp(id,ep){
   const p=getProg(id);
   const likes=epd.likes;
   scontent.innerHTML=`
+<div class="ep-stamp">No.${String(parseInt(c.id.replace('char_',''),10)).padStart(2,'0')} — ${c.era.replace(/\s+/g,'')} — ${ep}/${c.episode_count}</div>
 <div class="ep-header">
   <div class="ep-char-name">${c.era} — ${c.name}</div>
+  <div class="ep-era-line" style="background:${eraColor(c.era)}"></div>
   <div class="ep-title">第${ep}話　${epd.title}</div>
   <div class="ep-meta">
     <span class="m-time">${epd.header.time}</span>
@@ -869,15 +1051,81 @@ function finishNext(){
   const id=st.currentChar,ep=st.currentEp;
   const c=CHARS.find(x=>x.id===id);
   const wasUnlocked=nagiUnlocked();
+  const wasAll=allDone();
+  const wasComplete=isComplete(id);
+  const crossBefore=CROSS_POINTS.map(cp=>isComplete(cp.chars[0])&&isComplete(cp.chars[1]));
   markRead(id,ep);
   if(!wasUnlocked&&nagiUnlocked())revealNagi();
+  // 最新の露光 — 読んだばかりの区間が1.0sかけて白く定着する
+  const segIdx=Math.min(getProg(id).read.length-2,c.waypoints.length-2);
+  if(segIdx>=0)startFreshFade(id,segIdx);
   renderDots();drawTrails();updateLabels();
-  if(isComplete(id)){closeStory();return}
+  // 二重露光 — この読了で新たに成立した「時を越えた交差」だけが一度発火する
+  CROSS_POINTS.forEach((cp,i)=>{
+    if(!crossBefore[i]&&isComplete(cp.chars[0])&&isComplete(cp.chars[1]))fireDoubleExpose(cp);
+  });
+  if(isComplete(id)){
+    if(!wasComplete)fixStar(id,c.died);
+    if(!wasAll&&allDone())startFinale();
+    closeStory();return
+  }
   if(ep<c.episode_count)openEp(id,ep+1);
+}
+
+// ===== 感光エフェクト群 — 全て一度だけ走り、戻らない(露光は不可逆) =====
+// 駆動は経過時間ベース + setTimeout(30fps)。RAFが間引かれる環境でも最終状態に必ず到達する
+function startFreshFade(id,idx){
+  const t0=performance.now();
+  st.fresh={id,idx,k:0};
+  (function step(){
+    st.fresh.k=Math.min(1,(performance.now()-t0)/1000);
+    drawTrails();
+    if(st.fresh.k<1)setTimeout(step,33);
+  })();
+}
+function fireRing(x,y,cls,baseR){
+  const r=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  r.setAttribute('cx',x);r.setAttribute('cy',y);r.setAttribute('r',baseR||3);
+  r.setAttribute('fill','none');r.setAttribute('stroke',cls==='fx-cross'?CY.cross:CY.light);
+  r.setAttribute('stroke-width',cls==='fx-cross'?'1.1':'0.9');
+  r.setAttribute('class',cls);
+  dotsL.appendChild(r);
+  r.addEventListener('animationend',()=>r.remove());
+  setTimeout(()=>r.remove(),2600); // animationend保険(reduced-motion環境)
+}
+// 読了の定着: 生者=白く定着 / 死者=白く定着→ゆっくり赤錆へ酸化して止まる(2段階)
+function fixStar(id,died){
+  const c=CHARS.find(x=>x.id===id);
+  const pos=(st.dotPos&&st.dotPos[id])||c.waypoints[curIdx(c)].coord;
+  fireRing(pos[0],pos[1],'fx-ring');
+  if(died){
+    const core=dotsL.querySelector(`g[data-id="${id}"] .star-core`);
+    if(core)core.classList.add('oxidizing');
+  }
+}
+function fireDoubleExpose(cp){
+  fireRing(cp.coord[0],cp.coord[1],'fx-cross',4);
+}
+// 全35人 — 大星座が3.5sかけて端から現像され、全星が一度だけ深く一呼吸する
+function startFinale(){
+  st.finaleP=0;
+  const t0=performance.now();
+  (function step(){
+    st.finaleP=Math.min(1,(performance.now()-t0)/3500);
+    drawTrails();
+    if(st.finaleP<1){setTimeout(step,33);return}
+    st.finaleP=null;drawTrails();
+    document.body.classList.add('finale');
+    const n=document.getElementById('complete-note');
+    if(n){
+      n.innerHTML='<span style="font-family:var(--font-mono);letter-spacing:.3em;font-size:14px">35 / 35 — developed</span><br><span style="font-size:12px;color:#aec4de;letter-spacing:.2em">すべての証が、紙に残った</span>';
+      n.classList.add('show');setTimeout(()=>n.classList.remove('show'),8000);
+    }
+  })(t0);
 }
 function revealNagi(){
   const n=document.getElementById('complete-note');if(!n)return;
-  n.innerHTML='巡礼の刻<br><span style="font-size:11px;color:#7ad0ff;letter-spacing:.12em">廃墟を歩く者が、地図に現れた</span>';
+  n.innerHTML='巡礼の刻<br><span style="font-size:11px;color:#e6c88e;letter-spacing:.12em">廃墟を歩く者が、地図に現れた</span>';
   n.classList.add('show');setTimeout(()=>n.classList.remove('show'),5200);
   revealLayer(); // ナギ出現=データ層に記録を残す者の出現→層トグルを出す
 }
@@ -892,7 +1140,7 @@ function closeStory(){
 }
 function doLike(btn){
   const icon=document.getElementById('like-icon'),cnt=document.getElementById('like-cnt');
-  if(icon.textContent==='♡'){icon.textContent='♥';icon.style.color='#999';cnt.textContent=(+cnt.textContent.replace(/,/g,'')+1).toLocaleString();btn.classList.add('liked')}
+  if(icon.textContent==='♡'){icon.textContent='♥';icon.style.color='#b5654a';cnt.textContent=(+cnt.textContent.replace(/,/g,'')+1).toLocaleString();btn.classList.add('liked')}
   else{icon.textContent='♡';icon.style.color='';cnt.textContent=(+cnt.textContent.replace(/,/g,'')-1).toLocaleString();btn.classList.remove('liked')}
 }
 // VR/real layer is now content-driven per episode (see openEp); the manual toggle was removed per feedback
