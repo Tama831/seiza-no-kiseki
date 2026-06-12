@@ -71,6 +71,8 @@ body.vr-view #paper-grain{opacity:0}
 /* ===== 星 ===== */
 .char-dot{cursor:pointer}
 .char-dot.locked{cursor:default;pointer-events:none}
+.char-dot:focus{outline:none}
+.char-dot:focus-visible .star-core{stroke:var(--cy-light);stroke-width:1.4}
 /* 生きている星のハレーションはゆっくり呼吸する(位相は --bd で星ごとにずらす)。
    死者の星だけは静止 — 動かないことが碑になる */
 .dot-glow{animation:star-breath 5.2s ease-in-out infinite;animation-delay:var(--bd,0s)}
@@ -119,7 +121,7 @@ body.finale .dot-glow{animation:breath 6s ease-in-out 1,star-breath 5.2s ease-in
 .ep-era-line{height:2px;width:64px;margin:10px 0 14px;background:var(--cy-halation)}
 .ep-title{font-size:23px;font-weight:500;color:var(--arc-text);letter-spacing:.08em;margin-bottom:14px}
 .ep-meta{font-size:12px;color:var(--arc-text-soft);line-height:2.1}
-.ep-meta span{display:block;border-bottom:1px dotted var(--arc-rule);max-width:24em;padding:2px 0}
+.ep-meta span{display:block;max-width:24em;padding:2px 0}
 .ep-meta .m-time::before{content:"時刻 \00a0";color:var(--arc-pencil)}
 .ep-meta .m-place::before{content:"場所 \00a0";color:var(--arc-pencil)}
 .ep-meta .m-who::before{content:"語り手 \00a0";color:var(--arc-pencil)}
@@ -145,7 +147,7 @@ body.finale .dot-glow{animation:breath 6s ease-in-out 1,star-breath 5.2s ease-in
 #title-wrap h1{font-size:15px;font-weight:500;color:var(--ui-on-dark);letter-spacing:.42em}
 #title-wrap .sub{font-size:10px;color:var(--ui-on-dark-dim);letter-spacing:.26em;margin-top:5px}
 #title-stamp{font-family:var(--font-mono);font-size:8px;letter-spacing:.22em;color:var(--ui-stamp);opacity:.7;margin-top:7px}
-#zoom-hint{position:fixed;bottom:22px;right:20px;font-size:9px;color:var(--ui-on-dark-dim);letter-spacing:.18em;line-height:2;pointer-events:none;font-family:var(--font-mono);opacity:.8}
+#zoom-hint{position:fixed;bottom:22px;right:20px;font-size:10px;color:var(--ui-on-dark-dim);letter-spacing:.14em;line-height:2;pointer-events:none;font-family:var(--font-en);opacity:.85}
 #complete-note{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:300;opacity:0;transition:opacity .5s;text-align:center;font-size:13px;letter-spacing:.15em;line-height:2.2;padding:26px 44px;border:1px solid var(--ui-stamp);background:rgba(10,26,48,.96);color:var(--cy-light)}
 #complete-note.show{opacity:1}
 /* ===== data-layer (VR) view — デジタイズされた青写真スキャン ===== */
@@ -181,7 +183,6 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
 [data-vr="1"] .ep-char-name{color:#3a7ab0}
 [data-vr="1"] .ep-title{color:#8fdcff;text-shadow:0 0 12px rgba(120,200,255,.45);animation:vr-flicker 5s infinite}
 [data-vr="1"] .ep-meta{color:#5a8cb4}
-[data-vr="1"] .ep-meta span{border-color:#16334e}
 [data-vr="1"] .ep-meta .m-time::before,[data-vr="1"] .ep-meta .m-place::before,[data-vr="1"] .ep-meta .m-who::before{color:#3a6a90}
 [data-vr="1"] .ep-body{color:#a6cfe8}
 [data-vr="1"] .ep-footer{border-color:#16334e}
@@ -208,14 +209,14 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
 .ep-char-name .pname:hover{color:var(--arc-text);border-color:var(--arc-text)}
 [data-vr="1"] .ep-char-name .pname{border-color:#3a6a90}
 [data-vr="1"] .ep-char-name .pname:hover{color:#8fdcff;border-color:#8fdcff}
-#pcard{position:fixed;z-index:180;width:150px;height:178px;pointer-events:none;opacity:0;transform:translateY(5px);filter:blur(4px);transition:opacity .4s,transform .4s,filter .55s;background-size:cover;background-position:center 10%;border:1px solid var(--arc-rule);box-shadow:0 10px 32px rgba(4,10,22,.55);background-color:var(--cy-paper-1)}
-#pcard.show{opacity:1;transform:none;filter:blur(0)}
+#pcard{position:fixed;z-index:180;width:150px;height:178px;pointer-events:none;opacity:0;transform:translateY(5px);filter:blur(4px) saturate(.84);transition:opacity .4s,transform .4s,filter .55s;background-size:cover;background-position:center 10%;border:1px solid var(--arc-rule);box-shadow:0 10px 32px rgba(4,10,22,.55);background-color:var(--cy-paper-1)}
+#pcard.show{opacity:1;transform:none;filter:blur(0) saturate(.84)}
 #pmodal{position:fixed;inset:0;z-index:220;background:rgba(7,16,31,.82);display:flex;align-items:center;justify-content:center;padding:26px;opacity:0;pointer-events:none;transition:opacity .35s}
 #pmodal.show{opacity:1;pointer-events:all}
 .pm-sheet{position:relative;display:flex;max-width:900px;width:100%;max-height:88vh;background:linear-gradient(180deg,var(--arc-paper),#e6dfcc);border:1px solid var(--arc-paper-edge);box-shadow:0 24px 80px rgba(4,10,22,.6);overflow:hidden;transform:translateY(14px);transition:transform .4s cubic-bezier(.22,.7,.3,1)}
 #pmodal.show .pm-sheet{transform:none}
 .pm-img{flex:0 0 46%;background:var(--cy-paper-0);display:flex;align-items:center;justify-content:center;min-height:0}
-.pm-img img{width:100%;height:100%;object-fit:contain}
+.pm-img img{width:100%;height:100%;object-fit:contain;filter:saturate(.84) contrast(.97)}
 .pm-body{flex:1;padding:34px 36px;overflow-y:auto;color:var(--arc-text);scrollbar-width:thin;scrollbar-color:var(--arc-rule) transparent}
 .pm-stamp{font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;color:var(--arc-pencil);border:1px solid var(--arc-rule);display:inline-block;padding:4px 10px;margin-bottom:16px}
 .pm-name{font-size:22px;font-weight:500;letter-spacing:.1em;margin-bottom:4px}
@@ -237,6 +238,7 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
 @media(max-width:640px){.pm-sheet{flex-direction:column;max-height:92vh}.pm-img{flex:0 0 42vh}.pm-body{padding:22px 20px}}
 @media(pointer:coarse){#zoom-hint{display:none}}
 @media(max-width:640px){
+  #sea-drift{animation:none}
   #story-overlay{padding:0}
   #story-scroll{margin:0;max-width:none;border:none;padding:54px 22px 40px}
   .ep-title{font-size:19px}
@@ -245,6 +247,18 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
   #title-wrap h1{font-size:13px}
   .eg-title{font-size:24px}
   body.vr-view #vr-scrim{animation:none}
+}
+/* ===== 高コントラスト環境 — 淡い感光紙でも星と文字を見失わせない ===== */
+@media(prefers-contrast:more){
+  .star-core{opacity:1}
+  .dot-label{fill:#eaf2fb}
+  #zoom-hint,#title-stamp{color:#aec4de;opacity:1}
+  #title-wrap h1{color:#eaf2fb}
+  .ep-body{color:#10203a}
+  #layer-btn.found{color:#8fdcff;border-color:#3a7ab0}
+}
+@media(forced-colors:active){
+  .like-btn,.nav-btn,#story-close,.pm-close,#eg-enter,#layer-btn{border:1px solid ButtonText}
 }
 /* ===== reduced motion: 全ての感光を瞬間遷移に縮約 ===== */
 @media(prefers-reduced-motion:reduce){
@@ -255,14 +269,15 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
 </style>
 </head>
 <body>
+<noscript><div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0a1a30;color:#aec4de;z-index:999;font-family:'Hiragino Mincho ProN',serif;letter-spacing:.12em;line-height:2.4;text-align:center;padding:24px">この星図は JavaScript の灯りで現像されます。<br>有効にして、もう一度お越しください。</div></noscript>
 
-<div id="entry-gate">
+<div id="entry-gate" role="dialog" aria-modal="true" aria-labelledby="eg-title" aria-describedby="eg-warn">
   <div id="eg-stamp">CYANOTYPE ARCHIVE<br>35 TESTIMONIES OF WAR<br>SEIZA NO KISEKI</div>
   <div class="eg-inner">
-    <div class="eg-title">星座の軌跡</div>
+    <div class="eg-title" id="eg-title">星座の軌跡</div>
     <div class="eg-sub">35の戦時の証</div>
     <p class="eg-concept">架空の世界を生きた35人。<br>星＝人、線＝その人が歩いた道、交差＝時を越えて同じ場所に立った者たち。<br>星に触れて、物語を読む。</p>
-    <div class="eg-warn"><div class="eg-warn-h">— 読む前に —</div>占領・処刑・飢餓・身体の損壊・子どもの死など、戦争の暴力を直接描く場面を含みます。美化や煽情を避け、起きたことを起きたままに描いています。</div>
+    <div class="eg-warn" id="eg-warn"><div class="eg-warn-h">— 読む前に —</div>占領・処刑・飢餓・身体の損壊・子どもの死など、戦争の暴力を直接描く場面を含みます。美化や煽情を避け、起きたことを起きたままに描いています。</div>
     <button id="eg-enter">入る</button>
   </div>
 </div>
@@ -512,7 +527,7 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
 <!-- roster removed: navigate via map dots -->
 
 <!-- Story overlay -->
-<div id="story-overlay">
+<div id="story-overlay" role="dialog" aria-modal="true" aria-label="証言">
   <button id="story-close" onclick="closeStory()">✕ 閉じる</button>
   <div id="story-scroll">
     <div id="story-content"></div>
@@ -528,7 +543,7 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
 
 <!-- 人物図鑑: hover胸像カード + 図版モーダル -->
 <div id="pcard"></div>
-<div id="pmodal">
+<div id="pmodal" role="dialog" aria-modal="true" aria-label="人物図鑑">
   <div class="pm-sheet">
     <button class="pm-close" onclick="closePortrait()">✕ 閉じる</button>
     <div class="pm-img"><img id="pm-img" alt="人物図版"></div>
@@ -607,7 +622,7 @@ const NAGI_MARKS=[
   {"coord": [481, 421], "kind": "memo", "note": "生きている森は、自分の下に何が埋まっているかを知らない。\n私は知っている。知ったまま、森の音を聞いた。\n— 近くに澄んだ川。計算しなくても、飲める。"}
 ];
 
-// Stories — Phase 1 (chars 01–03 only)
+// Stories — data/stories/char_XX.json から fetch で全35話を読み込む (episode_count は実データ長で上書きされる)
 let STORIES = {};
 
 // ===== CYANOTYPE PALETTE (CSS :root と対で管理 — canvasはCSS変数を解決できないためJS側にも持つ) =====
@@ -631,7 +646,7 @@ const REDUCED_MOTION=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const st = {
   zoom:1, panX:0, panY:0,
   dragging:false, dsx:0, dsy:0, psx:0, psy:0,
-  pinchD:0, currentChar:null, currentEp:null, vrMode:false
+  pinchD:0, currentChar:null, currentEp:null
 };
 
 function loadProg(){try{return JSON.parse(localStorage.getItem('stellar-v1')||'{}')}catch{return{}}}
@@ -948,13 +963,21 @@ function renderDots(){
   const addDot=(x,y,r,fill,op)=>{const d=document.createElementNS(NS_SVG,'circle');
     d.setAttribute('cx',x);d.setAttribute('cy',y);d.setAttribute('r',r);
     d.setAttribute('fill',fill);d.setAttribute('opacity',op);d.style.pointerEvents='none';dotsL.appendChild(d);};
+  // 同一座標の交差 (霧島 [966,224] = ソウラ×トウカ と ナギ×トウカ 等) は1つの票券に束ねる。
+  // 別々に描くと透明hit円が重なり、後勝ちで片方の説明が永久に読めなくなる
+  const crossAt={};
   CROSS_POINTS.forEach(cp=>{
     if(!(isComplete(cp.chars[0])&&isComplete(cp.chars[1])))return;
-    const harm=/加害|撃つ|虐殺|処刑/.test(cp.tip);
-    addMark(cp.coord[0],cp.coord[1],14,'#bcd8f4','0.4','0.28',null,cp.tip);  // 外輪 + hit
-    addDot(cp.coord[0],cp.coord[1],2.0,harm?'#e8cfc2':'#ffffff','0.92');     // 焼き切れた芯
-    const m=document.createElementNS(NS_SVG,'circle');                        // 内輪
-    m.setAttribute('cx',cp.coord[0]);m.setAttribute('cy',cp.coord[1]);m.setAttribute('r',8);
+    const k=cp.coord.join(',');
+    (crossAt[k]=crossAt[k]||{coord:cp.coord,tips:[]}).tips.push(cp.tip);
+  });
+  Object.values(crossAt).forEach(gx=>{
+    const tip=gx.tips.join('\n\n');
+    const harm=/加害|撃つ|虐殺|処刑/.test(tip);
+    addMark(gx.coord[0],gx.coord[1],14,'#bcd8f4','0.4','0.28',null,tip);  // 外輪 + hit
+    addDot(gx.coord[0],gx.coord[1],2.0,harm?'#e8cfc2':'#ffffff','0.92');  // 焼き切れた芯
+    const m=document.createElementNS(NS_SVG,'circle');                     // 内輪
+    m.setAttribute('cx',gx.coord[0]);m.setAttribute('cy',gx.coord[1]);m.setAttribute('r',8);
     m.setAttribute('fill','none');m.setAttribute('stroke',harm?'#b5654a':'#bcd8f4');
     m.setAttribute('stroke-width','0.5');m.setAttribute('opacity',harm?'0.4':'0.5');
     m.style.pointerEvents='none';dotsL.appendChild(m);
@@ -1130,11 +1153,22 @@ function renderDots(){
       g.addEventListener('click',e=>{e.stopPropagation();openChar(c.id)});
       g.addEventListener('mouseenter',e=>{setHover(c.id);tip(e,`${c.name}\n${c.era} / ${c.origin}\n${p.read.length}/${c.episode_count}話`)});
       g.addEventListener('mouseleave',()=>{clearHover();hideTip()});
+      // キーボード/スクリーンリーダでも星に触れられるように (Tab巡回 + Enter/Space)
+      g.setAttribute('tabindex','0');g.setAttribute('role','button');
+      g.setAttribute('aria-label',`${c.name} ${c.era} ${p.read.length}/${c.episode_count}話`);
+      g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openChar(c.id)}});
+      g.addEventListener('focus',()=>setHover(c.id));
+      g.addEventListener('blur',clearHover);
     }
     dotsL.appendChild(g);
   });
   // stories 読込後の render まで現像スタッガーを有効に保つ(読込前の薄い星→読込後の本現像の二段)
   if(Object.keys(STORIES).length)st.bootPlayed=true;
+
+  // 読了の現在地 — 図郭の題箋に静かに記す (未読了ゼロなら従来表示のまま)
+  const doneN=CHARS.filter(c=>isComplete(c.id)).length;
+  const sc=document.getElementById('sub-count');
+  if(sc)sc.textContent=doneN>0?`${CHARS.length}の証のうち ${doneN} が現像された`:`${CHARS.length}の戦時の証`;
 }
 
 function updateLabels(){
@@ -1146,8 +1180,15 @@ function updateLabels(){
 // ===== TOOLTIP =====
 const tipEl=document.getElementById('tooltip');
 function tip(e,txt){
-  tipEl.textContent=txt;tipEl.style.left=(e.clientX+14)+'px';tipEl.style.top=(e.clientY-8)+'px';
+  tipEl.textContent=txt;
   tipEl.classList.add('show');
+  // クランプ: 右端・下端でツールチップが画面外に出ないように(タッチでナギの記録を読む唯一の手段なので必須)。
+  // showで実寸が確定してから測る。pcardと同じ作法。
+  const tw=tipEl.offsetWidth||250,th=tipEl.offsetHeight||40,M=8;
+  let lx=e.clientX+14,ty=e.clientY-8;
+  if(lx+tw>innerWidth-M)lx=Math.max(M,e.clientX-14-tw); // 右で溢れるなら左側に出す
+  if(ty+th>innerHeight-M)ty=Math.max(M,innerHeight-M-th);
+  tipEl.style.left=lx+'px';tipEl.style.top=Math.max(M,ty)+'px';
 }
 function hideTip(){tipEl.classList.remove('show')}
 
@@ -1218,10 +1259,36 @@ function openPortrait(id){
   const seen=c.waypoints.slice(0,Math.min(k,c.waypoints.length)).map(w=>w.label);
   const rest=c.waypoints.length-seen.length;
   document.getElementById('pm-route').innerHTML='<b>歩いた道</b>'+seen.join(' → ')+(rest>0?` → <span style="opacity:.55">（未読の道 ${rest}）</span>`:'');
+  document.getElementById('pm-img').alt=`${c.name} — ${MEDIA_LABEL[p.media]}`;
+  st._lastFocusP=document.activeElement;
+  m.inert=false;
   m.classList.add('show');
+  setTimeout(()=>{const b=m.querySelector('.pm-close');if(b&&m.classList.contains('show'))b.focus({preventScroll:true})},80);
 }
-function closePortrait(){document.getElementById('pmodal').classList.remove('show')}
+function closePortrait(){
+  const m=document.getElementById('pmodal');
+  m.classList.remove('show');m.inert=true;
+  if(st._lastFocusP&&document.contains(st._lastFocusP)){st._lastFocusP.focus({preventScroll:true})}
+  st._lastFocusP=null;
+}
 document.getElementById('pmodal').addEventListener('click',e=>{if(e.target.id==='pmodal')closePortrait()});
+document.getElementById('pmodal').addEventListener('keydown',e=>trapTab(document.getElementById('pmodal'),e));
+document.getElementById('story-overlay').addEventListener('keydown',e=>{
+  if(document.getElementById('pmodal').classList.contains('show'))return; // 前面の図鑑が優先
+  trapTab(document.getElementById('story-overlay'),e);
+});
+document.getElementById('pmodal').inert=true;
+document.getElementById('story-overlay').inert=true;
+
+// ===== a11y: モーダルのフォーカス運搬とトラップ =====
+function trapTab(container,e){
+  if(e.key!=='Tab')return;
+  const f=Array.from(container.querySelectorAll('button,[href],[tabindex]:not([tabindex="-1"])'));
+  if(!f.length)return;
+  const first=f[0],last=f[f.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+}
 
 // ===== STORY =====
 const overlay=document.getElementById('story-overlay');
@@ -1248,6 +1315,7 @@ function openEp(id,ep){
   if(overlay.dataset.vr==='1')revealLayer(); // ライがデータ層(ネクサス)に入る→層トグルを発見的に出す
   const p=getProg(id);
   const likes=epd.likes;
+  const isLiked=(p.liked||[]).includes(ep);
   preloadPortrait(id);
   scontent.innerHTML=`
 <div class="ep-stamp">No.${String(parseInt(c.id.replace('char_',''),10)).padStart(2,'0')} — ${c.era.replace(/\s+/g,'')} — ${ep}/${c.episode_count}</div>
@@ -1263,7 +1331,7 @@ function openEp(id,ep){
 </div>
 <div class="ep-body">${epd.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
 <div class="ep-footer">
-  <button class="like-btn" id="like-btn" onclick="doLike(this)"><span id="like-icon">♡</span> <span id="like-cnt">${likes.toLocaleString()}</span></button>
+  <button class="like-btn${isLiked?' liked':''}" id="like-btn" onclick="doLike(this)" aria-pressed="${isLiked}"><span id="like-icon"${isLiked?' style="color:#b5654a"':''}>${isLiked?'♥':'♡'}</span> <span id="like-cnt">${(likes+(isLiked?1:0)).toLocaleString()}</span></button>
   <div class="ep-nav">
     <button class="nav-btn" onclick="navEp(-1)" ${ep<=1?'disabled':''}>← 前の話</button>
     <span class="ep-indicator">${ep} / ${c.episode_count}</span>
@@ -1273,7 +1341,11 @@ function openEp(id,ep){
   </div>
 </div>`;
   document.getElementById('story-scroll').scrollTop=0;
+  if(!overlay.classList.contains('visible'))st._lastFocusStory=document.activeElement;
+  overlay.setAttribute('aria-label',`${c.name} 第${ep}話 ${epd.title}`);
+  overlay.inert=false;
   overlay.classList.add('visible');
+  setTimeout(()=>{const b=document.getElementById('story-close');if(b&&overlay.classList.contains('visible'))b.focus({preventScroll:true})},80);
 }
 
 function finishNext(){
@@ -1371,16 +1443,23 @@ function navEp(d){
   if(ne>=1&&ne<=c.episode_count)openEp(st.currentChar,ne);
 }
 function closeStory(){
-  overlay.classList.remove('visible');st.currentChar=null;st.currentEp=null;
+  overlay.classList.remove('visible');overlay.inert=true;st.currentChar=null;st.currentEp=null;
+  if(st._lastFocusStory&&document.contains(st._lastFocusStory)){st._lastFocusStory.focus({preventScroll:true})}
+  st._lastFocusStory=null;
   if(st._layerHintPending){st._layerHintPending=false;const b=document.getElementById('layer-btn');if(b){b.classList.add('reveal-pulse');setTimeout(()=>b.classList.remove('reveal-pulse'),2500);}showLayerHint();}
 }
 function doLike(btn){
+  // 赤い綴じ紐は読了と同じく不可逆に「定着」する — localStorage(stellar-v1)の liked 配列に永続化
   const icon=document.getElementById('like-icon'),cnt=document.getElementById('like-cnt');
-  if(icon.textContent==='♡'){icon.textContent='♥';icon.style.color='#b5654a';cnt.textContent=(+cnt.textContent.replace(/,/g,'')+1).toLocaleString();btn.classList.add('liked')}
-  else{icon.textContent='♡';icon.style.color='';cnt.textContent=(+cnt.textContent.replace(/,/g,'')-1).toLocaleString();btn.classList.remove('liked')}
+  const id=st.currentChar,ep=st.currentEp;
+  if(id==null||ep==null)return;
+  const p=getProg(id);p.liked=p.liked||[];
+  const i=p.liked.indexOf(ep);
+  if(i<0){p.liked.push(ep);icon.textContent='♥';icon.style.color='#b5654a';cnt.textContent=(+cnt.textContent.replace(/,/g,'')+1).toLocaleString();btn.classList.add('liked');btn.setAttribute('aria-pressed','true')}
+  else{p.liked.splice(i,1);icon.textContent='♡';icon.style.color='';cnt.textContent=(+cnt.textContent.replace(/,/g,'')-1).toLocaleString();btn.classList.remove('liked');btn.setAttribute('aria-pressed','false')}
+  saveProg();
 }
-// VR/real layer is now content-driven per episode (see openEp); the manual toggle was removed per feedback
-// announcement popup removed per feedback
+// VR層の切替はエピソード内容駆動 (openEp)。手動トグル/告知ポップアップは過去に却下済み — 再追加しないこと
 
 // ===== KEYBOARD =====
 document.addEventListener('keydown',e=>{
@@ -1393,83 +1472,6 @@ document.addEventListener('keydown',e=>{
   if(e.key==='ArrowLeft'&&st.currentChar)navEp(-1);
 });
 overlay.addEventListener('click',e=>{if(e.target===overlay)closeStory()});
-
-// ===== CARTOGRAPHY (procedural chart: smooth coasts, depth/elevation contours) =====
-function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-// landmass control polygons (coarse geography — splined & roughened into coasts)
-const LANDS=[
-  [[255,148],[310,130],[382,124],[464,133],[534,153],[550,196],[538,240],[513,270],[490,294],[454,298],[416,287],[386,281],[355,278],[316,272],[280,258],[260,230],[250,196]],
-  [[380,287],[418,272],[476,268],[544,286],[574,324],[568,376],[545,420],[504,446],[460,450],[413,432],[385,396],[368,346]],
-  [[578,138],[652,130],[724,136],[774,158],[798,208],[786,258],[760,288],[718,298],[676,282],[644,260],[616,224],[590,188]],
-  [[96,144],[168,130],[244,138],[274,175],[267,228],[248,273],[228,318],[207,365],[182,426],[150,438],[120,423],[100,382],[86,310],[81,246],[87,192]],
-  [[603,328],[684,318],[764,328],[810,368],[804,424],[775,454],[718,464],[656,452],[616,426],[596,386]]
-];
-const ISLES=[[718,167,21,13],[746,159,14,8]];
-// mountain massifs (localized high ground) {x,y,r,n}
-const PEAKS=[
-  {x:432,y:188,r:34,n:7},{x:492,y:300,r:26,n:6},{x:726,y:186,r:26,n:6},
-  {x:196,y:362,r:30,n:7},{x:690,y:392,r:26,n:6},{x:332,y:200,r:17,n:4},
-  {x:150,y:232,r:17,n:4},{x:660,y:236,r:15,n:4}
-];
-// rivers (highland -> coast), splined
-const RIVERS=[
-  [[424,176],[404,206],[372,236],[332,254],[300,256]],
-  [[492,302],[472,332],[454,362],[442,400],[432,432]],
-  [[726,192],[704,226],[680,256],[662,286]],
-  [[196,360],[182,330],[170,302],[160,300]],
-  [[690,392],[708,362],[720,352]],
-  [[332,208],[348,238],[362,266],[368,286]],
-  [[560,244],[540,266],[520,286],[510,300]]
-];
-function splineClosed(pts,seg){const n=pts.length,o=[];for(let i=0;i<n;i++){const p0=pts[(i-1+n)%n],p1=pts[i],p2=pts[(i+1)%n],p3=pts[(i+2)%n];for(let t=0;t<seg;t++){const s=t/seg,s2=s*s,s3=s2*s;o.push([0.5*((2*p1[0])+(-p0[0]+p2[0])*s+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*s2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*s3),0.5*((2*p1[1])+(-p0[1]+p2[1])*s+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*s2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*s3)]);}}return o}
-function splineOpen(pts,seg){const n=pts.length,o=[];for(let i=0;i<n-1;i++){const p0=pts[Math.max(i-1,0)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(i+2,n-1)];for(let t=0;t<seg;t++){const s=t/seg,s2=s*s,s3=s2*s;o.push([0.5*((2*p1[0])+(-p0[0]+p2[0])*s+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*s2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*s3),0.5*((2*p1[1])+(-p0[1]+p2[1])*s+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*s2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*s3)]);}}o.push(pts[n-1]);return o}
-function centroid(p){let x=0,y=0;for(const q of p){x+=q[0];y+=q[1]}return[x/p.length,y/p.length]}
-function roughen(ring,amp,seed){const n=ring.length,rnd=mulberry32(seed);let nz=[];for(let i=0;i<n;i++)nz.push(rnd()*2-1);for(let k=0;k<4;k++){const b=nz.slice();for(let i=0;i<n;i++)b[i]=(nz[(i-1+n)%n]+nz[i]*2+nz[(i+1)%n])/4;nz=b;}const o=[];for(let i=0;i<n;i++){const a=ring[(i-1+n)%n],c=ring[(i+1)%n];let tx=c[0]-a[0],ty=c[1]-a[1];const L=Math.hypot(tx,ty)||1;const nx=ty/L,ny=-tx/L;o.push([ring[i][0]+nx*nz[i]*amp,ring[i][1]+ny*nz[i]*amp]);}return o}
-function offset(ring,dist){const n=ring.length,c=centroid(ring),o=[];for(let i=0;i<n;i++){const a=ring[(i-1+n)%n],b=ring[(i+1)%n];let tx=b[0]-a[0],ty=b[1]-a[1];const L=Math.hypot(tx,ty)||1;let nx=ty/L,ny=-tx/L;if((ring[i][0]-c[0])*nx+(ring[i][1]-c[1])*ny<0){nx=-nx;ny=-ny;}o.push([ring[i][0]+nx*dist,ring[i][1]+ny*dist]);}return o}
-function ringArea(p){let a=0;for(let i=0;i<p.length;i++){const j=(i+1)%p.length;a+=p[i][0]*p[j][1]-p[j][0]*p[i][1];}return Math.abs(a)/2}
-function pathOf(p,close){let d='M'+p[0][0].toFixed(1)+','+p[0][1].toFixed(1);for(let i=1;i<p.length;i++)d+='L'+p[i][0].toFixed(1)+','+p[i][1].toFixed(1);return close?d+'Z':d}
-
-function buildMap(){
-  const root=document.getElementById('cartography');if(!root)return;
-  let grat='',sea='',land='',landc='',rivers='',coast='';
-  // graticule
-  for(let x=60;x<900;x+=60)grat+=`<line x1="${x}" y1="6" x2="${x}" y2="534"/>`;
-  for(let y=60;y<540;y+=60)grat+=`<line x1="6" y1="${y}" x2="894" y2="${y}"/>`;
-  // landmasses
-  LANDS.forEach((poly,i)=>{
-    const ring=roughen(splineClosed(poly,14),2.4,4100+i*57);
-    for(let k=4;k>=1;k--){const r=offset(ring,k*7);sea+=`<path d="${pathOf(r,true)}" fill="none" stroke="#1a2233" stroke-width="${(0.75-k*0.09).toFixed(2)}" opacity="${(0.5-k*0.09).toFixed(2)}"/>`;}
-    land+=`<path d="${pathOf(ring,true)}" fill="#14161e"/>`;
-    for(let k=1;k<=6;k++){const r=offset(ring,-k*8.5);if(ringArea(r)<260)break;landc+=`<path d="${pathOf(r,true)}" fill="none" stroke="#272e3e" stroke-width="0.5" opacity="${(0.5-k*0.05).toFixed(2)}"/>`;}
-    coast+=`<path d="${pathOf(ring,true)}" fill="none" stroke="#47536f" stroke-width="0.9" opacity=".85"/>`;
-  });
-  // islands
-  ISLES.forEach(([cx,cy,rx,ry])=>{
-    sea+=`<ellipse cx="${cx}" cy="${cy}" rx="${rx+6}" ry="${ry+6}" fill="none" stroke="#1a2233" stroke-width="0.5" opacity=".3"/>`;
-    land+=`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#14161e"/>`;
-    coast+=`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="#47536f" stroke-width="0.7" opacity=".8"/>`;
-  });
-  // mountain massifs (nested elevation rings)
-  PEAKS.forEach((Pk,pi)=>{
-    const rnd=mulberry32(9001+pi*71),seg=40;let nz=[];for(let i=0;i<=seg;i++)nz.push(rnd()*2-1);for(let k=0;k<3;k++){const b=nz.slice();for(let i=1;i<seg;i++)b[i]=(nz[i-1]+nz[i]*2+nz[i+1])/4;nz=b;}nz[seg]=nz[0];
-    for(let lv=0;lv<Pk.n;lv++){const rr=Pk.r*(1-lv/(Pk.n+0.5));if(rr<2)break;let d='';for(let i=0;i<=seg;i++){const ang=i/seg*Math.PI*2,w=nz[i]*2.2*(rr/Pk.r);const px=Pk.x+Math.cos(ang)*(rr+w),py=Pk.y+Math.sin(ang)*(rr+w)*0.82;d+=(i?'L':'M')+px.toFixed(1)+','+py.toFixed(1)+' ';}d+='Z';const inner=lv>Pk.n-2;landc+=`<path d="${d}" fill="none" stroke="${inner?'#4a5470':'#313a4f'}" stroke-width="${inner?0.85:0.55}" opacity="${(0.3+0.42*(lv/Pk.n)).toFixed(2)}"/>`;}
-    landc+=`<circle cx="${Pk.x}" cy="${Pk.y}" r="1" fill="#566186" opacity=".7"/>`;
-  });
-  // rivers
-  RIVERS.forEach(rv=>{const d=pathOf(splineOpen(rv,12),false);rivers+=`<path d="${d}" fill="none" stroke="#243140" stroke-width="1.2" opacity=".5"/>`+`<path d="${d}" fill="none" stroke="#36495b" stroke-width="0.5" opacity=".8"/>`;});
-  // chart furniture
-  const frame=`<rect x="5" y="5" width="890" height="530" fill="none" stroke="#2a3142" stroke-width="0.8" opacity=".7"/><rect x="9" y="9" width="882" height="522" fill="none" stroke="#2a3142" stroke-width="0.4" opacity=".45"/>`;
-  const compass=`<g transform="translate(60,484)" opacity=".5"><circle r="15" fill="none" stroke="#3a425c" stroke-width="0.5"/><circle r="9" fill="none" stroke="#3a425c" stroke-width="0.4" opacity=".6"/><path d="M0,-21 L2.6,-2 L0,1.5 L-2.6,-2 Z" fill="#4c577a"/><path d="M0,21 L2.6,2 L0,-1.5 L-2.6,2 Z" fill="none" stroke="#3a425c" stroke-width="0.4"/><line x1="-21" y1="0" x2="21" y2="0" stroke="#3a425c" stroke-width="0.3"/><text x="0" y="-24" font-size="7.5" fill="#5d6party" text-anchor="middle" font-family="Georgia,serif">N</text></g>`.replace('#5d6party','#5d6890');
-  const scale=`<g transform="translate(748,512)" opacity=".5"><line x1="0" y1="0" x2="80" y2="0" stroke="#3a425c" stroke-width="0.5"/><line x1="0" y1="-3" x2="0" y2="3" stroke="#3a425c" stroke-width="0.5"/><line x1="40" y1="-2.5" x2="40" y2="2.5" stroke="#3a425c" stroke-width="0.4"/><line x1="80" y1="-3" x2="80" y2="3" stroke="#3a425c" stroke-width="0.5"/><text x="40" y="-6" font-size="6" fill="#4f5876" text-anchor="middle" font-family="Georgia,serif">五百里</text></g>`;
-  root.innerHTML=
-    `<g stroke="#0f131c" stroke-width="0.4" opacity=".7">${grat}</g>`+
-    `<g>${sea}</g>`+
-    `<g>${land}</g>`+
-    `<g>${landc}</g>`+
-    `<g stroke-linecap="round">${rivers}</g>`+
-    `<g>${coast}</g>`+
-    frame+compass+scale;
-}
 
 // ===== STORY LOADER (fetch char_XX.json over http) =====
 async function loadStories(){
@@ -1487,7 +1489,10 @@ async function loadStories(){
 }
 
 // ===== INIT =====
-window.addEventListener('resize',center);
+window.addEventListener('resize',()=>{
+  // 閲覧中の視点を全景リセットしない。fitより縮んだ時だけ整える
+  if(st.zoom<=fitZoom())center();else{clamp();applyT();}
+});
 // Base map: Azgaar seed 7001 (density 11), soft coastlines (see MAP_DECISION.md).
 // Character trajectories re-placed onto this geography 2026-06-05 (layout 案①):
 // West continent = NORTIA, central island = VERGA, east continent = ELDANO(N)+CARTA(S desert)+USKARI(SE).
@@ -1546,7 +1551,16 @@ function revealLayer(){
 }
 if(localStorage.getItem('seiza-layer'))document.getElementById('layer-btn').classList.add('found');
 center();renderDots();drawTrails();
-loadStories().then(()=>{renderDots();drawTrails()});
+loadStories().then(()=>{renderDots();drawTrails();
+  if(!Object.keys(STORIES).length){
+    // 全fetch失敗 (file://直開き or 一時的なネットワーク断)。沈黙させず、記録調の一文だけ置く
+    const n=document.getElementById('complete-note');
+    n.innerHTML=location.protocol==='file:'
+      ?'この星図は、サーバー越しに開いたときだけ現像されます。<br><span style="font-size:11px;color:#7fa8d4">ローカルでは http サーバー経由で開いてください</span>'
+      :'証言の読み込みに失敗した。<br><span style="font-size:11px;color:#7fa8d4">回線を確かめて、再読み込みしてください</span>';
+    n.classList.add('show');
+  }
+});
 // ===== entry gate (content warning, shown once per browser) =====
 (function(){
   const gate=document.getElementById('entry-gate');
@@ -1555,6 +1569,7 @@ loadStories().then(()=>{renderDots();drawTrails()});
   if(localStorage.getItem('seiza-entered')){gate.style.display='none';document.body.classList.add('booted');}
   const btn=document.getElementById('eg-enter');
   if(btn)btn.addEventListener('click',()=>{localStorage.setItem('seiza-entered','1');gate.classList.add('gone');document.body.classList.add('booted');setTimeout(()=>{gate.style.display='none';},650);});
+  if(btn&&gate.style.display!=='none')setTimeout(()=>btn.focus({preventScroll:true}),120); // 警告ごとSRに渡す初期フォーカス
 })();
 </script>
 </body>
