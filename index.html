@@ -203,6 +203,38 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
 #eg-enter:hover{background:rgba(234,242,251,.12);border-color:var(--cy-light)}
 @keyframes expose{0%{opacity:0;filter:blur(4px)}100%{opacity:1;filter:blur(0)}}
 /* ===== mobile ===== */
+/* ===== 人物図鑑 (portrait plates) — 名前hover=胸像の感光 / クリック=図版+設定 ===== */
+.ep-char-name .pname{cursor:pointer;border-bottom:1px dotted var(--arc-pencil);transition:color .2s,border-color .2s}
+.ep-char-name .pname:hover{color:var(--arc-text);border-color:var(--arc-text)}
+[data-vr="1"] .ep-char-name .pname{border-color:#3a6a90}
+[data-vr="1"] .ep-char-name .pname:hover{color:#8fdcff;border-color:#8fdcff}
+#pcard{position:fixed;z-index:180;width:150px;height:178px;pointer-events:none;opacity:0;transform:translateY(5px);filter:blur(4px);transition:opacity .4s,transform .4s,filter .55s;background-size:cover;background-position:center 10%;border:1px solid var(--arc-rule);box-shadow:0 10px 32px rgba(4,10,22,.55);background-color:var(--cy-paper-1)}
+#pcard.show{opacity:1;transform:none;filter:blur(0)}
+#pmodal{position:fixed;inset:0;z-index:220;background:rgba(7,16,31,.82);display:flex;align-items:center;justify-content:center;padding:26px;opacity:0;pointer-events:none;transition:opacity .35s}
+#pmodal.show{opacity:1;pointer-events:all}
+.pm-sheet{position:relative;display:flex;max-width:900px;width:100%;max-height:88vh;background:linear-gradient(180deg,var(--arc-paper),#e6dfcc);border:1px solid var(--arc-paper-edge);box-shadow:0 24px 80px rgba(4,10,22,.6);overflow:hidden;transform:translateY(14px);transition:transform .4s cubic-bezier(.22,.7,.3,1)}
+#pmodal.show .pm-sheet{transform:none}
+.pm-img{flex:0 0 46%;background:var(--cy-paper-0);display:flex;align-items:center;justify-content:center;min-height:0}
+.pm-img img{width:100%;height:100%;object-fit:contain}
+.pm-body{flex:1;padding:34px 36px;overflow-y:auto;color:var(--arc-text);scrollbar-width:thin;scrollbar-color:var(--arc-rule) transparent}
+.pm-stamp{font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;color:var(--arc-pencil);border:1px solid var(--arc-rule);display:inline-block;padding:4px 10px;margin-bottom:16px}
+.pm-name{font-size:22px;font-weight:500;letter-spacing:.1em;margin-bottom:4px}
+.pm-era{font-family:var(--font-en);font-size:12px;color:var(--arc-text-soft);letter-spacing:.16em;margin-bottom:14px}
+.pm-line{height:2px;width:56px;margin-bottom:16px;background:var(--cy-halation)}
+.pm-bio{font-size:14px;line-height:2.05;margin-bottom:18px}
+.pm-route{font-size:12px;line-height:1.95;color:var(--arc-text-soft);border-top:1px solid var(--arc-rule);padding-top:14px}
+.pm-route b{color:var(--arc-pencil);font-weight:400;letter-spacing:.18em;display:block;margin-bottom:6px;font-size:11px}
+.pm-close{position:absolute;top:14px;right:16px;z-index:2;background:rgba(10,26,48,.08);border:1px solid var(--arc-rule);color:var(--arc-text-soft);font-size:12px;padding:5px 14px;cursor:pointer;font-family:var(--font-jp);letter-spacing:.12em;transition:all .2s}
+.pm-close:hover{color:var(--arc-text);border-color:var(--arc-text-soft)}
+/* ライ(データ層の住人)の図鑑はスキャン画面で開く */
+#pmodal[data-vr="1"] .pm-sheet{background:radial-gradient(ellipse at 50% 0%,#06182f 0%,#04101f 100%);border-color:#1b3550;box-shadow:0 0 44px rgba(57,184,255,.16)}
+#pmodal[data-vr="1"] .pm-body{color:#a6cfe8}
+#pmodal[data-vr="1"] .pm-stamp{color:#5a9cc8;border-color:#1b3550}
+#pmodal[data-vr="1"] .pm-era{color:#5a8cb4}
+#pmodal[data-vr="1"] .pm-route{color:#5a8cb4;border-color:#16334e}
+#pmodal[data-vr="1"] .pm-route b{color:#3a6a90}
+#pmodal[data-vr="1"] .pm-close{background:rgba(0,22,44,.5);border-color:#1b3550;color:#5a8cb4}
+@media(max-width:640px){.pm-sheet{flex-direction:column;max-height:92vh}.pm-img{flex:0 0 42vh}.pm-body{padding:22px 20px}}
 @media(pointer:coarse){#zoom-hint{display:none}}
 @media(max-width:640px){
   #story-overlay{padding:0}
@@ -494,6 +526,23 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
 <div id="layer-hint"></div>
 <div id="vr-scrim"></div>
 <div id="complete-note"></div>
+
+<!-- 人物図鑑: hover胸像カード + 図版モーダル -->
+<div id="pcard"></div>
+<div id="pmodal">
+  <div class="pm-sheet">
+    <button class="pm-close" onclick="closePortrait()">✕ 閉じる</button>
+    <div class="pm-img"><img id="pm-img" alt="人物図版"></div>
+    <div class="pm-body">
+      <div class="pm-stamp" id="pm-stamp"></div>
+      <div class="pm-name" id="pm-name"></div>
+      <div class="pm-era" id="pm-era"></div>
+      <div class="pm-line" id="pm-line"></div>
+      <div class="pm-bio" id="pm-bio"></div>
+      <div class="pm-route" id="pm-route"></div>
+    </div>
+  </div>
+</div>
 
 <script>
 // ===== INLINE DATA =====
@@ -1103,6 +1152,78 @@ function tip(e,txt){
 }
 function hideTip(){tipEl.classList.remove('show')}
 
+// ===== 人物図鑑 (portrait plates) =====
+// 名前 hover = 胸像が感光して浮かぶ / クリック = 図版+設定のモーダル。
+// 歩いた道は「読んだところまで」だけ開示する — 図鑑も露光とともに満ちていく
+const PORTRAITS={
+  char_01:{img:"assets/portraits/web/char_01.jpg",media:"engraving",bio:"エルダノ内陸の農村ガロン村に生まれ、二十二年を畑で過ごした。城主の徴兵令に従い槍を持ち、要塞での訓練と峠の戦いを経て、生き残りの一人として故郷への道を歩む。土を耕してきた手に戦場の記憶を刻みながら、村への帰路を辿る。"},
+  char_02:{img:"assets/portraits/web/char_02.jpg",media:"engraving",bio:"サレム砂漠で生まれ、羊の群れと一族とともに砂丘を渡り歩いてきた遊牧の民の娘。星で方角を読み、水場を探し、砂嵐を読む術を父から授かった。外来の軍が砂漠の北端に現れる中、己の知恵と弓を携えて砂漠の奥へと向かう。"},
+  char_03:{img:"assets/portraits/web/char_03.jpg",media:"engraving",bio:"三代続く騎士の家の長男として生まれ、父の死後に家督を継いだ。領地の維持のため銀貨を借り、聖地奪還の遠征船に乗り込む。信仰の意味を問いながら嵐の海を越え、見知らぬ大陸の乾いた道を、従者ウルリヒとともに南へ進む。"},
+  char_04:{img:"assets/portraits/web/char_04.jpg",media:"engraving",bio:"ユエン帝国の書記女官として十一年、文書の管理と写しに生を費やしてきた。帝崩御の夜、混乱の城内で書類を懐に抱え、自らの判断で夜を生き延びた。その後も都城の内外を静かに観察しながら、次の居場所を探して歩く。"},
+  char_05:{img:"assets/portraits/web/char_05.jpg",media:"photo",bio:"ミレス修道院で三十二年を写本と礼拝に捧げてきた副長の修道士。旧正統派の誓いを守り、詩篇の写しを日課とする。新教会派の軍が市街に入り布告が出される朝も、変わらぬ手つきで羊皮紙に向かっていた。"},
+  char_06:{img:"assets/portraits/web/char_06.jpg",media:"photo",bio:"タリン森林に暮らすノルティア先住民の女性。祖母の祖母の代からこの森に根を張り、鳥の声で夜明けを知り、木の根の感触で足元を読む。夫マルと四歳の息子ケトとともに、東の空に増えていく煙を静かに見守っていた。"},
+  char_07:{img:"assets/portraits/web/char_07.jpg",media:"photo",bio:"コルバ港の漁師。父から受け継いだ漁師小屋と錨を糧に、妻ナイラ、娘カラと海辺で生きてきた。植民地政府の重税に追い詰められ、ある夜すべてを失う。帰れる場所を取り戻すための戦いがあると聞き、夜明けの港を背に歩き始めた。"},
+  char_08:{img:"assets/portraits/web/char_08.jpg",media:"photo",bio:"エルダノのミレス工業地区の布地工場に十年勤める女性。十七歳で姉とともに工場に入り、織機四番から七番を一人で担当してきた。機械の引っかかりを手で直すことを覚え、音と振動で状態を読む。工場の外で何が起きても、指は次の修理を探している。"},
+  char_09:{img:"assets/portraits/web/char_09.jpg",media:"photo",bio:"ヴェルガ出身の傭兵。マカラ湾の漁師町に育ったが十七歳で港を離れ、以来十七年、各地を渡り歩いてきた。持ち物は最小限、帰る場所も待つ人もない。今度の仕事はカルタ・エルダノ国境近くでの鉱山調査隊の護衛だった。"},
+  char_10:{img:"assets/portraits/web/char_10.jpg",media:"photo",bio:"エルダノ連邦軍砲兵第八大隊に召集されたハルツ出身の若者。父の鉄鋳造工場で育ち、十二歳から溶炉の前で働いた。砲兵学校で弾道計算を学んだのは前線から遠ざかるためだったと父は言い続けた。召集の朝、二人はコーヒーを一杯飲み、別れの言葉を言わなかった。"},
+  char_11:{img:"assets/portraits/web/char_11.jpg",media:"photo",bio:"エルダノ軍の看護師として野戦病院から後送列車、後方病院へと転属を重ね、負傷兵の処置と記録を担い続ける女性。消毒薬の染みついた手で脈を診て、名も聞けぬまま縫い合わせ、また次の担架を迎える日々を送る。"},
+  char_12:{img:"assets/portraits/web/char_12.jpg",media:"photo",bio:"カルタ南部コルバ港の漁師仕事を辞め、婚礼の金を稼ぐため帝国義勇兵に志願した男。慣れない号令と砂まみれの訓練を経て最前線の塹壕に送られ、泥の中の日々を、故郷の婚約者の声だけを錨にして生きた。"},
+  char_13:{img:"assets/portraits/web/char_13.jpg",media:"photo",bio:"霧島と呼ばれる小島に夫と暮らす漁師の妻。エルダノ艦隊の占領で島の日常が塗り変えられても、食糧を近隣の女たちと融通し合いながら台所を守り続けた。占領下の冬に子を身ごもり、霧の名を持つ娘を産む。"},
+  char_14:{img:"assets/portraits/web/char_14.jpg",media:"photo",bio:"帝国軍少尉として任官し、占領地の行政記録と台帳管理を任されたエルダノ将校。住民台帳の照合と「分類」の業務を通じて組織の歯車となりながら、数字の正確さという論理の内側に身を置き続けた。"},
+  char_15:{img:"assets/portraits/web/char_15.jpg",media:"photo",bio:"カルタ農村でオリーブ畑を営む三十一歳の農夫。徴兵告示が村の古木に貼られた翌日、父から受け継いだ革の荷袋に三日分の食糧を詰め、妻と幼い息子と娘を残して、幼馴染のサリムとともに集合地へ向かった。"},
+  char_16:{img:"assets/portraits/web/char_16.jpg",media:"photo",bio:"ノルティア南部アルカ高地に生まれ、織物工場で働いていた十九歳の女性。軍の侵攻で母と幼い弟とともに高地を脱出し、難民キャンプと荷馬車の旅を経て内陸都市ミレスへたどり着いた。父の消息を待ちながら、縫製の作業場で針を動かし続ける。"},
+  char_17:{img:"assets/portraits/web/char_17.jpg",media:"photo",bio:"エルダノの都市ミレスに妻と息子と暮らす三十七歳の男性。印刷所で活字を組む職人だったが、戦時下の紙の欠乏で仕事を失い、空き地の畑と野菜売りで家族を養った。配給のパンが減り続ける夏、それでも朝は畑に出た。"},
+  char_18:{img:"assets/portraits/web/char_18.jpg",media:"photo",bio:"ノルティア南部ポルカ川のほとりの農村に生まれた女性。解放軍に徴兵された弟ルカの戦死を告げる電報を受け取り、遺体を引き取るため単身東へ向かった。官僚的な手続きの壁と崩れかけた街を抜けながら、弟の残した封筒をかばんの奥に抱えて歩き続けた。"},
+  char_19:{img:"assets/portraits/web/char_19.jpg",media:"photo",bio:"カルタ農村で小麦を作って育った若い農夫。解放軍に強制徴用されて故郷を離れ、基地での労役と砂漠横断、際どい仕事を経てヴェルガ各地を転々とした。帰ることと生きることの間で問われ続けながら、遠い異国の集落に根を下ろしていく。"},
+  char_20:{img:"assets/portraits/web/char_20.jpg",media:"photo",bio:"ヴェルガの都市ユエンの大学に通う文学部二年の学生。学生自治の認可を求めて地下印刷室でビラを刷り続け、広場に千人を集める集会を主導した。仲間が連行されるなかでも壇を降りず、自分たちの声を記録に残すことを求め続けた。"},
+  char_21:{img:"assets/portraits/web/char_21.jpg",media:"scan_amber",bio:"ウスカリ城塞都市で傭兵として生きる三十一歳。水路の警備から護衛任務まで、食えるかどうかだけを基準に仕事を選んできた。北部採掘地区へ向かう護送任務を受けた夜、契約書の地名の中に、行方の知れない父の影を重ねた。"},
+  char_22:{img:"assets/portraits/web/char_22.jpg",media:"scan_cyan",bio:"廃墟城塞の七階に住み、首の後ろのポートからVRデータ層に接続して生きる。情報都市ネクサスで請負の仕事をこなし、配給を得る。現実層とデータ層の境界は年を追うごとに薄れ、どちら側で朝を迎えたのか、自分でも定かでなくなりつつある。"},
+  char_23:{img:"assets/portraits/web/char_23.jpg",media:"engraving",bio:"タリン氏族の狩人。三年前に父を凍った川で失い、以来、冬の猟と見張りを担ってきた。飢えに迫られた隣族との交渉の夜に立ち会い、縄張りを分かち合うという答えが出たあとも、炎の前で黙々と矢の軸を削り続けた。"},
+  char_24:{img:"assets/portraits/web/char_24.jpg",media:"photo",bio:"ノルティア北部タリン森林地帯を拠点とする独立運動の地下連絡員。前任者が捕まり引き継いだ地下印刷所を守り、南への連絡線を繋ぎ続けてきた。「絶やすな」という走り書きを胸に、答えの出ないまま、それでも夜の森を動き続ける。"},
+  char_25:{img:"assets/portraits/web/char_25.jpg",media:"photo",bio:"カルタ北岸を拠点に、北の隊商路を三十年渡り歩いてきた隊商頭。ラクダ十七頭を率い、己にしか読めない暗号帳簿と父譲りの目利きで交渉をこなす。宗教戦争の余波が検問と通行料の形で路に忍び込み始めた頃、父の商法の限界を静かに認め始めていた。"},
+  char_26:{img:"assets/portraits/web/char_26.jpg",media:"photo",bio:"カルタ北部の油田に働きに出た女工。南の村に病んだ父と母、幼い弟を残し、毎月の賃金の半分を仕送りする。圧力計の読み取りと弁の管理を任され、数字の記録を黙々と積み重ねながら、戦争と油田と家族を繋ぐ細い糸の上に立ち続ける。"},
+  char_27:{img:"assets/portraits/web/char_27.jpg",media:"photo",bio:"エルダノ占領地の農村に生きた少女。六歳の弟コルと、父と母とともに暮らし、麦の刈り入れを知り、霜の朝を知り、空の色が季節ごとに変わることを知っている。家族と手をつないで、来る朝を一つずつ迎えた子。"},
+  char_28:{img:"assets/portraits/web/char_28.jpg",media:"photo",bio:"アルヴ連邦の印刷所で活字を組んでいた植字工。召集令状を受けて山岳の前線へ送られ、ヴォルカン山麓の塹壕で仲間とともに冬を越した。鉛の匂いの記憶と仲間の声を頼りに、星の見える夜だけ顔を上げた。"},
+  char_29:{img:"assets/portraits/web/char_29.jpg",media:"engraving",bio:"帝国水軍に徴収されたヴェルガ農村出身の漕ぎ手。逃げるという選択を断たれた中で折り合いをつけ、十二年選手の老漕手オウを師と仰いだ。内乱の海戦に巻き込まれながら、ただ一漕ぎずつ、確かに前へ進んだ。"},
+  char_30:{img:"assets/portraits/web/char_30.jpg",media:"photo",bio:"霧島の漁師の女。夫を海で失い、父から受け継いだ船と網で一人漁を続けてきた。占領が始まっても夜明け前に網を出し、供出と制限のあいだに出られる海を探しながら、島の人々とともに日々を積み重ねる。"},
+  char_31:{img:"assets/portraits/web/char_31.jpg",media:"scan_amber",bio:"ウスカリ北部の採掘コロニーK区域で、七ヶ月契約の掘削作業員として働く。地下の岩盤を読むセンサーの扱いに習熟し、危険な坑道では班の先行確認役を務める。報酬を貯めて南の城塞都市で次の仕事を探すことだけを支えに、単調で過酷な日々を掘り進む。"},
+  char_32:{img:"assets/portraits/web/char_32.jpg",media:"photo",bio:"エルダノとカルタを隔てる海峡の西岸で、父から受け継いだ平底の渡し舟を三十年操る渡し守。旗も立場も持たず、渡し賃を払う者は誰であれ対岸へ送る。戦が始まり川面の荷が変わっても、欠けた針が北を指す父の磁石盤を頼りに、霧の海峡を往復し続ける。"},
+  char_33:{img:"assets/portraits/web/char_33.jpg",media:"engraving",bio:"カルタ内陸ガラン高地の城砦に生まれ育ち、父祖の代から続く守り手の一人として高地の守備を担う。熱と補給不足で兵が減り続ける中、残された五百余名とともに遠征軍の包囲に備える。砂と岩と乾いた風を当然のものとして育った、生粋の高地の人である。"},
+  char_34:{img:"assets/portraits/web/char_34.jpg",media:"photo",bio:"ノルティア中部のヤシュ族の集落に生まれ、針葉樹の皮から薬を作る森の知識を身につけた女性。夫と二人の子とともに暮らすが、東から来た入植者が砦を建て、森が「管理地」に組み込まれようとしているのを察知する。森と暮らしを守るため、静かに状況を見極めながら生きる。"},
+  char_35:{img:"assets/portraits/web/char_35.jpg",media:"scan_amber",bio:"ほぼ死に絶えた世界の廃墟を一人で巡り、城塞・機械・骨・岩に刻まれた文字など、消えゆくものの形を手製の紙と炭で記録し続ける地図描き。読む者がいるかどうかを問わず、「あったことをなかったことにしない」ために写し取り、水と食料を計算しながら次の廃墟へ歩く。"}
+};
+const MEDIA_LABEL={engraving:"銅版図版 · engraved plate",photo:"青焼き写真 · cyanotype print",scan_amber:"野帳スキャン · field-notebook scan",scan_cyan:"データ層スキャン · data-layer scan"};
+function preloadPortrait(id){const p=PORTRAITS[id];if(p&&!p._pre){p._pre=new Image();p._pre.src=p.img;}}
+function showPCard(e,id){
+  if(matchMedia('(pointer:coarse)').matches)return;
+  const p=PORTRAITS[id];if(!p)return;
+  const c=document.getElementById('pcard');
+  c.style.backgroundImage=`url(${p.img})`;
+  c.style.left=Math.min(innerWidth-170,e.clientX+20)+'px';
+  c.style.top=Math.max(12,e.clientY-205)+'px';
+  c.classList.add('show');
+}
+function hidePCard(){document.getElementById('pcard').classList.remove('show')}
+function openPortrait(id){
+  const p=PORTRAITS[id],c=CHARS.find(x=>x.id===id);if(!p||!c)return;
+  hidePCard();
+  const m=document.getElementById('pmodal');
+  m.dataset.vr=document.getElementById('story-overlay').dataset.vr||'0';
+  document.getElementById('pm-img').src=p.img;
+  document.getElementById('pm-stamp').textContent=`No.${String(parseInt(id.replace('char_',''),10)).padStart(2,'0')} — ${MEDIA_LABEL[p.media]}`;
+  document.getElementById('pm-name').textContent=c.name;
+  document.getElementById('pm-era').textContent=`${c.era} · ${c.origin}`;
+  document.getElementById('pm-line').style.background=eraColor(c.era);
+  document.getElementById('pm-bio').textContent=p.bio;
+  const k=Math.max(1,getProg(id).read.length); // 既読waypoint数(未読でも出自=最初の地は地図で見えている)
+  const seen=c.waypoints.slice(0,Math.min(k,c.waypoints.length)).map(w=>w.label);
+  const rest=c.waypoints.length-seen.length;
+  document.getElementById('pm-route').innerHTML='<b>歩いた道</b>'+seen.join(' → ')+(rest>0?` → <span style="opacity:.55">（未読の道 ${rest}）</span>`:'');
+  m.classList.add('show');
+}
+function closePortrait(){document.getElementById('pmodal').classList.remove('show')}
+document.getElementById('pmodal').addEventListener('click',e=>{if(e.target.id==='pmodal')closePortrait()});
+
 // ===== STORY =====
 const overlay=document.getElementById('story-overlay');
 const scontent=document.getElementById('story-content');
@@ -1128,10 +1249,11 @@ function openEp(id,ep){
   if(overlay.dataset.vr==='1')revealLayer(); // ライがデータ層(ネクサス)に入る→層トグルを発見的に出す
   const p=getProg(id);
   const likes=epd.likes;
+  preloadPortrait(id);
   scontent.innerHTML=`
 <div class="ep-stamp">No.${String(parseInt(c.id.replace('char_',''),10)).padStart(2,'0')} — ${c.era.replace(/\s+/g,'')} — ${ep}/${c.episode_count}</div>
 <div class="ep-header">
-  <div class="ep-char-name">${c.era} — ${c.name}</div>
+  <div class="ep-char-name">${c.era} — <span class="pname" onclick="openPortrait('${id}')" onmouseenter="showPCard(event,'${id}')" onmousemove="showPCard(event,'${id}')" onmouseleave="hidePCard()">${c.name}</span></div>
   <div class="ep-era-line" style="background:${eraColor(c.era)}"></div>
   <div class="ep-title">第${ep}話　${epd.title}</div>
   <div class="ep-meta">
@@ -1263,7 +1385,11 @@ function doLike(btn){
 
 // ===== KEYBOARD =====
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){closeStory()}
+  if(e.key==='Escape'){
+    const pm=document.getElementById('pmodal');
+    if(pm&&pm.classList.contains('show')){closePortrait();return}
+    closeStory()
+  }
   if(e.key==='ArrowRight'&&st.currentChar)navEp(1);
   if(e.key==='ArrowLeft'&&st.currentChar)navEp(-1);
 });

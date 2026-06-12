@@ -1,28 +1,29 @@
 #!/usr/bin/env python3
-"""星座の軌跡 — キャラクター肖像図版ジェネレータ v2 (方式B: 時代でメディア進化)
-銅版画(AE480-1400) → 青焼き写真(AE1600-1950) → スキャン(AE2000+)。
-全員「可愛げ・親しみやすさ」: 絵本的なやわらかい人物造形、顔は見せる(2026-06-12 たまさん指示)。
+"""星座の軌跡 — キャラクター肖像図版ジェネレータ v3 (本番: 全35人、データ駆動)
+方式B: 時代でメディア進化 — 銅版画(AE<1500) → 青焼き写真(<2000) → スキャン(2000+、ナギ系=琥珀/VR=シアン)。
+全員「可愛げ・親しみやすさ」: 絵本的なやわらかい人物造形、顔を見せる(2026-06-12 たまさん決定)。
+入力: /tmp/seiza_chars.json (id/era/origin/vr) + /tmp/seiza_bios.json (appearance_en)。
 鍵は環境変数 GEMINI_API_KEY (コミットしない)。
-usage: GEMINI_API_KEY=… python3 tools/gen_portraits.py [char_id …]
+usage: GEMINI_API_KEY=… python3 tools/gen_portraits.py [--force] [char_id …]
 """
 import base64, json, os, sys, time, urllib.request
 
 MODEL = "gemini-3-pro-image"
-OUT = os.path.join(os.path.dirname(__file__), "..", "assets", "portraits", "test")
+ROOT = os.path.join(os.path.dirname(__file__), "..")
+OUT = os.path.join(ROOT, "assets", "portraits", "src")
 
-# ---- 共通: 可愛げ・親しみ (全メディア共通の人物造形) ----
 CHARM = (
     "The character is drawn with a gentle, approachable, contemporary storybook "
     "sensibility: soft rounded facial features, kind readable eyes, a calm warm "
     "expression, slightly stylized appealing proportions. The face is clearly visible "
     "and likable. NOT chibi, NOT glossy modern anime, no oversized sparkling eyes, "
     "no glamour. Worn clothes and tired-but-resilient warmth keep the quiet dignity "
-    "of a war testimony. Single full-body figure, standing, slight three-quarter view, "
-    "whole figure inside the frame with generous margins. Absolutely no text, no "
-    "letters, no numbers, no watermark."
+    "of a war testimony. Single full-body figure (plus a companion only if the "
+    "subject description explicitly includes one), standing, slight three-quarter "
+    "view, whole figure inside the frame with generous margins. Absolutely no text, "
+    "no letters, no numbers, no watermark."
 )
 
-# ---- メディア別テンプレート (方式B) ----
 MEDIA = {
     "engraving": (
         "Medium: an antique cyanotype blueprint plate combined with fine copper-"
@@ -55,46 +56,13 @@ MEDIA = {
     ),
 }
 
-CHARS = {
-    "char_01": ("aen", "engraving",
-        "A young farm conscript man of an early-medieval agrarian village (fantasy "
-        "world, year 480): rough hand-woven tunic and leg wraps, a simple slightly "
-        "ill-fitting leather chest piece, carrying a farming hoe over his shoulder and "
-        "a small cloth bundle. Lean, work-worn, a determined but gentle young face. "
-        "A few wheat stalks at his feet."),
-    "char_02": ("solea", "engraving",
-        "A young desert nomad woman (fantasy world, year 495): layered desert robes "
-        "and a long head cloth against sand wind, woven sash, a leather water skin and "
-        "a shepherd's staff. Standing on a low dune, hem moving in wind, a calm gentle "
-        "gaze and a quiet protective warmth, as if watching over children just outside "
-        "the frame. Clean simple background, no other figures."),
-    "char_04": ("lyan", "engraving",
-        "A young court lady-scribe of an east-asian style imperial palace (fantasy "
-        "world, year 1350): layered silk court robes with wide sleeves, hair pinned up "
-        "simply, holding a writing brush and a bound bundle of records. Composed soft "
-        "features, an intelligent kind expression, standing on a stone palace floor."),
-    "char_06": ("karin", "photo",
-        "A young mother of a small forest tribe (fantasy world, year 1680): practical "
-        "woven-fiber and hide clothing, a woven carrying band across the chest, holding "
-        "the hand of her small four-year-old son who peeks out shyly from behind her. "
-        "Both faces visible and soft; she is weary but steady, with a faint reassuring "
-        "smile. Standing among tall young trees."),
-    "char_35": ("nagi", "scan_amber",
-        "An androgynous wandering ruin-surveyor in a far, quiet, fallen future (year "
-        "2163, low-tech salvage world, no machines): layered patched traveling clothes "
-        "sewn from salvaged cloth, a heavy pack with a rolled blanket, a walking staff, "
-        "an open field notebook in one hand. Dust-worn boots, a light curious "
-        "expression, standing amid faintly sketched ruin outlines."),
-    "char_22": ("rai", "scan_cyan",
-        "A thin androgynous person in their late twenties who lives alone in a ruined "
-        "concrete fortress and connects to a virtual data city (year 2157): a thin worn "
-        "jacket over layered shabby clothes, a slender cable running from a small port "
-        "at the back of the neck down toward a salvaged reclining chair hinted beside "
-        "them. Tired but soft hopeful face, calm half-smile, faint cyan light reflecting "
-        "on their cheek."),
-}
+def media_of(c):
+    y = int(c["era"].replace("AE ", ""))
+    if y < 1500: return "engraving"
+    if y < 2000: return "photo"
+    return "scan_cyan" if c.get("vr") else "scan_amber"
 
-def gen(cid, slug, media, desc, key):
+def gen(cid, media, desc, key):
     prompt = MEDIA[media] + "\n\n" + CHARM + "\n\nSubject: " + desc
     body = {
         "contents": [{"parts": [{"text": prompt}]}],
@@ -108,32 +76,50 @@ def gen(cid, slug, media, desc, key):
         data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
     for attempt in range(3):
         try:
-            with urllib.request.urlopen(req, timeout=180) as r:
+            with urllib.request.urlopen(req, timeout=240) as r:
                 d = json.load(r)
             parts = d["candidates"][0]["content"]["parts"]
             img = next(p["inlineData"]["data"] for p in parts if "inlineData" in p)
-            path = os.path.join(OUT, f"{cid}_{slug}.png")
+            path = os.path.join(OUT, f"{cid}.png")
             with open(path, "wb") as f:
                 f.write(base64.b64decode(img))
-            print(f"OK {cid} [{media}] -> {path}")
+            print(f"OK {cid} [{media}]", flush=True)
             return True
         except Exception as e:
-            print(f"retry {cid} ({attempt+1}/3): {e}", file=sys.stderr)
-            time.sleep(8)
+            print(f"retry {cid} ({attempt+1}/3): {e}", file=sys.stderr, flush=True)
+            time.sleep(10)
+    print(f"FAIL {cid}", flush=True)
     return False
+
+# テスト6人の確定版 (assets/portraits/test/ のスラッグ付きPNGをsrcへ採用コピーする)
+APPROVED = {"char_01": "char_01_aen.png", "char_02": "char_02_solea.png",
+            "char_04": "char_04_lyan.png", "char_06": "char_06_karin.png",
+            "char_22": "char_22_rai.png", "char_35": "char_35_nagi.png"}
 
 def main():
     key = os.environ.get("GEMINI_API_KEY")
     if not key:
         sys.exit("GEMINI_API_KEY not set")
     os.makedirs(OUT, exist_ok=True)
-    targets = sys.argv[1:] or list(CHARS)
-    ok = 0
+    chars = {c["id"]: c for c in json.load(open("/tmp/seiza_chars.json"))}
+    bios = json.load(open("/tmp/seiza_bios.json"))
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    force = "--force" in sys.argv
+    targets = args or sorted(chars)
+    ok = skip = 0
     for cid in targets:
-        slug, media, desc = CHARS[cid]
-        ok += gen(cid, slug, media, desc, key)
+        dst = os.path.join(OUT, f"{cid}.png")
+        if cid in APPROVED and not force and cid not in args:
+            srcp = os.path.join(ROOT, "assets", "portraits", "test", APPROVED[cid])
+            if os.path.exists(srcp):
+                import shutil; shutil.copyfile(srcp, dst)
+                print(f"COPY {cid} (approved test plate)", flush=True); skip += 1; continue
+        if os.path.exists(dst) and not force and cid not in args:
+            print(f"SKIP {cid} (exists)", flush=True); skip += 1; continue
+        era_line = f"This person lives in the era year {chars[cid]['era']} of a fictional world. "
+        ok += gen(cid, media_of(chars[cid]), era_line + bios[cid]["appearance_en"], key)
         time.sleep(2)
-    print(f"done {ok}/{len(targets)}")
+    print(f"done generated={ok} reused/skipped={skip} / {len(targets)}")
 
 if __name__ == "__main__":
     main()
