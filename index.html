@@ -322,11 +322,11 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
 #era-axis-btn:hover{border-color:#3a7ab0;color:#7ac8ff}
 #era-axis-btn[aria-pressed="true"]{color:#8fdcff;border-color:var(--vr-grid)}
 body.vr-view #era-axis-btn{opacity:0;visibility:hidden;pointer-events:none}
-#era-axis{position:fixed;left:0;right:0;bottom:0;height:84px;z-index:40;pointer-events:none;opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease;font-family:var(--font-en)}
+#era-axis{position:fixed;left:0;right:0;bottom:62px;height:88px;z-index:48;pointer-events:none;opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease;font-family:var(--font-en)}
 #era-axis.open{opacity:1;transform:none;pointer-events:auto}
 body.vr-view #era-axis{opacity:0!important;transform:translateY(14px)!important;pointer-events:none}
-#era-axis .ea-bg{position:absolute;inset:0;background:linear-gradient(0deg,rgba(8,20,38,.92) 0%,rgba(8,20,38,.62) 62%,rgba(8,20,38,0) 100%);pointer-events:none}
-#era-axis svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:84px;display:block}
+#era-axis .ea-bg{position:absolute;inset:0;background:linear-gradient(0deg,rgba(8,20,38,0) 0%,rgba(8,20,38,.82) 30%,rgba(8,20,38,.82) 72%,rgba(8,20,38,0) 100%);pointer-events:none}
+#era-axis svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:88px;display:block}
 .ea-line{stroke:var(--cy-halation);stroke-width:.6;opacity:.32}
 .ea-grid{stroke:var(--cy-grat);stroke-width:.5;opacity:.5}
 .ea-grid-lbl{fill:var(--ui-on-dark-dim);font-size:8px;letter-spacing:.1em;opacity:.7}
@@ -338,7 +338,7 @@ body.vr-view #era-axis{opacity:0!important;transform:translateY(14px)!important;
 .ea-tick:focus-visible{outline:none}
 .ea-tick:focus-visible circle{stroke:var(--cy-light);stroke-width:.8}
 .ea-cap{fill:var(--ui-on-dark-dim);font-size:8px;letter-spacing:.18em;opacity:.6}
-@media(max-width:640px){#era-axis{height:60px}#era-axis svg{height:60px}.ea-cap{display:none}}
+@media(max-width:640px){#era-axis{bottom:58px;height:64px}#era-axis svg{height:64px}.ea-cap{display:none}}
 @media(prefers-reduced-motion:reduce){#era-axis,#era-axis-btn{transition:none}}
 </style>
 </head>
@@ -1361,20 +1361,19 @@ function renderEraAxis(){
   host.querySelectorAll('svg').forEach(s=>s.remove());
   const W=innerWidth, mobile=matchMedia('(max-width:640px)').matches;
   const H=mobile?60:84;
-  const padL=mobile?54:96, padR=mobile?20:76, axisY=H-(mobile?20:26);
+  const padL=mobile?24:54, padR=mobile?24:54, axisY=H-(mobile?22:30); // 浮遊配置なので左右に広く取れる(密集緩和)
   const usable=Math.max(40,W-padL-padR);
   const Y0=480,Y1=2163;
   const xOf=y=>padL+(y-Y0)/(Y1-Y0)*usable;
   const list=CHARS.filter(charVisible).map(c=>({c,year:eraYear(c),x:xOf(eraYear(c)),ox:xOf(eraYear(c))})).sort((a,b)=>a.year-b.year);
-  const MIN=mobile?7:9;
-  // 密集帯(AE1907-1975に16人)を確実に分離: 引き戻しは弱く・反復は多めに
-  for(let it=0;it<260;it++){let moved=false;
-    for(let i=0;i<list.length-1;i++){const d=list[i+1].x-list[i].x;
-      if(d<MIN){const push=(MIN-d)/2;list[i].x-=push;list[i+1].x+=push;moved=true;}}
-    for(const p of list){p.x+=(p.ox-p.x)*0.015;}
-    list.forEach(p=>{p.x=Math.max(padL,Math.min(W-padR,p.x));});
-    if(!moved)break;
+  // 1次元ラベル配置: 必ず最小間隔MINを確保しつつ、余裕のある所は真の年代位置に置く(バネ式より確実)
+  const MIN=mobile?8:11, lo=padL, hi=W-padR;
+  for(let i=1;i<list.length;i++)list[i].x=Math.max(list[i].x,list[i-1].x+MIN); // L→R: 右へ押して間隔確保
+  if(list.length&&list[list.length-1].x>hi){                                   // 右端を超えたらR→Lで引き戻す
+    list[list.length-1].x=hi;
+    for(let i=list.length-2;i>=0;i--)list[i].x=Math.min(list[i].x,list[i+1].x-MIN);
   }
+  list.forEach(p=>{p.x=Math.max(lo,Math.min(hi,p.x));});
   const NS='http://www.w3.org/2000/svg';
   const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
   const mk=(t,at)=>{const e=document.createElementNS(NS,t);for(const k in at)e.setAttribute(k,at[k]);return e;};
@@ -1390,12 +1389,16 @@ function renderEraAxis(){
     svg.appendChild(mk('line',{'class':'ea-leader',x1:ox,y1:axisY,x2:x,y2:ty}));
     const g=mk('g',{'class':'ea-tick'+(dead?' dead':''),tabindex:'0',role:'button','aria-label':`${c.name} ${c.era}`});
     g.appendChild(mk('circle',{cx:x,cy:ty,r:'1.9'}));
-    g.appendChild(mk('circle',{cx:x,cy:ty,r:'7',fill:'rgba(0,0,0,0)'}));
+    g.appendChild(mk('circle',{cx:x,cy:ty,r:'5.5',fill:'rgba(0,0,0,0)'})); // 当たり判定: 隣と重なりすぎない幅(間隔MIN=11)
     const wp=(st.dotPos&&st.dotPos[c.id])||c.waypoints[curIdx(c)].coord;
     const go=ev=>{ev.stopPropagation();flyTo(wp[0],wp[1],3.4);setHover(c.id);clearTimeout(st._eaT);st._eaT=setTimeout(clearHover,1600);};
-    g.addEventListener('mouseenter',ev=>{setHover(c.id);tip(ev,`${c.name}\n${c.era} / ${c.origin}`);});
-    g.addEventListener('mousemove',ev=>tip(ev,`${c.name}\n${c.era} / ${c.origin}`));
-    g.addEventListener('mouseleave',()=>{clearHover();hideTip();});
+    // 指タップ端末では hover点灯を切る(なぞる動作でcanvasが再描画され続けチカチカするのを防ぐ。clickのみ)
+    if(!COARSE){
+      g.addEventListener('mouseenter',ev=>{clearTimeout(st._eaHoverT);setHover(c.id);tip(ev,`${c.name}\n${c.era} / ${c.origin}`);});
+      g.addEventListener('mousemove',ev=>tip(ev,`${c.name}\n${c.era} / ${c.origin}`));
+      // 隣の点へ移る一瞬の「全点灯に戻る」フラッシュを消す: 消灯は短い猶予で予約し、次の点に入れば取り消す
+      g.addEventListener('mouseleave',()=>{hideTip();clearTimeout(st._eaHoverT);st._eaHoverT=setTimeout(clearHover,90);});
+    }
     g.addEventListener('click',go);
     g.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();go(ev);}});
     svg.appendChild(g);
