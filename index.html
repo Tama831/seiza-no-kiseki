@@ -131,6 +131,11 @@ body.finale .dot-glow{animation:breath 6s ease-in-out 1,star-breath 5.2s ease-in
 .like-btn{display:flex;align-items:center;gap:7px;background:none;border:1px solid var(--arc-rule);color:var(--arc-text-soft);padding:7px 16px;cursor:pointer;border-radius:0;font-size:13px;font-family:var(--font-en);transition:all .25s}
 .like-btn:hover{border-color:var(--cy-dead);color:var(--cy-dead)}
 .like-btn.liked{border-color:var(--cy-dead);color:var(--cy-dead)}
+.hand-btn{display:flex;align-items:center;gap:7px;background:none;border:1px solid var(--arc-rule);color:var(--arc-text-soft);padding:7px 16px;cursor:pointer;border-radius:0;font-size:12px;font-family:var(--font-jp);letter-spacing:.08em;transition:all .25s;flex:0 0 auto}
+.hand-btn:hover{border-color:var(--arc-text-soft);color:var(--arc-text)}
+.hand-btn:disabled{opacity:.3;cursor:default}
+.hand-btn .hand-mark{font-family:var(--font-mono);font-size:11px;opacity:.7}
+[data-vr="1"] .hand-btn{border-color:#16334e;color:#5e89b4}
 .ep-nav{display:flex;gap:10px;align-items:center}
 .nav-btn{background:none;border:1px solid var(--arc-rule);color:var(--arc-text-soft);padding:7px 18px;cursor:pointer;font-size:12px;border-radius:0;font-family:var(--font-jp);letter-spacing:.08em;transition:all .25s}
 .nav-btn:hover:not(:disabled){border-color:var(--arc-text-soft);color:var(--arc-text)}
@@ -150,6 +155,19 @@ body.finale .dot-glow{animation:breath 6s ease-in-out 1,star-breath 5.2s ease-in
 #zoom-hint{position:fixed;bottom:22px;right:20px;font-size:10px;color:var(--ui-on-dark-dim);letter-spacing:.14em;line-height:2;pointer-events:none;font-family:var(--font-en);opacity:.85}
 #complete-note{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:300;opacity:0;transition:opacity .5s;text-align:center;font-size:13px;letter-spacing:.15em;line-height:2.2;padding:26px 44px;border:1px solid var(--ui-stamp);background:rgba(10,26,48,.96);color:var(--cy-light)}
 #complete-note.show{opacity:1}
+/* ===== 読了後の「次の人へ」非モーダル導線(B7) — 急かさない。閉じた地図の隅に静かに置く ===== */
+#next-hint{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(10px);z-index:70;display:flex;align-items:center;gap:14px;max-width:min(92vw,440px);padding:13px 16px 13px 20px;background:rgba(8,20,38,.94);border:1px solid var(--ui-stamp);color:var(--ui-on-dark);font-size:12px;letter-spacing:.08em;line-height:1.85;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .6s ease,transform .6s ease}
+#next-hint.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);pointer-events:auto}
+#next-hint .nh-body{flex:1;font-family:var(--font-jp)}
+#next-hint .nh-body b{font-weight:500;color:var(--cy-light);letter-spacing:.06em;border-bottom:1px solid rgba(127,168,212,.4);cursor:pointer}
+#next-hint .nh-lead{display:block;font-size:10px;color:var(--ui-on-dark-dim);letter-spacing:.14em;margin-bottom:3px}
+#next-hint .nh-go{background:none;border:1px solid var(--ui-stamp);color:var(--cy-light);padding:6px 14px;cursor:pointer;border-radius:0;font-size:11px;letter-spacing:.12em;font-family:var(--font-jp);white-space:nowrap;transition:background .25s,border-color .25s}
+#next-hint .nh-go:hover{background:rgba(234,242,251,.1);border-color:var(--cy-light)}
+#next-hint .nh-x{background:none;border:none;color:var(--ui-on-dark-dim);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;font-family:var(--font-en);transition:color .2s}
+#next-hint .nh-x:hover{color:var(--ui-on-dark)}
+.star-core.next-pulse{animation:next-pulse 2.2s ease-out 1}
+@keyframes next-pulse{0%{stroke:var(--cy-light);stroke-width:.6}40%{stroke:var(--cy-light);stroke-width:2.2}100%{stroke:var(--cy-ink);stroke-width:.6}}
+@media (prefers-reduced-motion:reduce){.star-core.next-pulse{animation:none}#next-hint{transition:opacity .3s}}
 /* ===== data-layer (VR) view — デジタイズされた青写真スキャン ===== */
 /* 層トグルは最初は隠れている。データ層に触れた時(ライのVR層 or ナギ出現)に発見的に出現する */
 #layer-btn{position:fixed;bottom:22px;left:20px;background:rgba(8,18,34,.9);border:1px solid #1b3550;color:#3a6a90;padding:9px 20px;cursor:pointer;border-radius:0;font-size:11px;letter-spacing:.18em;z-index:50;transition:opacity .5s,transform .5s,background .25s,border-color .25s,color .25s,box-shadow .25s;font-family:var(--font-jp);opacity:0;visibility:hidden;transform:translateY(10px);pointer-events:none}
@@ -225,6 +243,9 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
 .pm-bio{font-size:14px;line-height:2.05;margin-bottom:18px}
 .pm-route{font-size:12px;line-height:1.95;color:var(--arc-text-soft);border-top:1px solid var(--arc-rule);padding-top:14px}
 .pm-route b{color:var(--arc-pencil);font-weight:400;letter-spacing:.18em;display:block;margin-bottom:6px;font-size:11px}
+.pm-route .plink{cursor:pointer;color:var(--arc-text);border-bottom:1px dotted var(--arc-pencil);transition:color .2s,border-color .2s}
+.pm-route .plink:hover{color:var(--cy-ink);border-color:var(--cy-ink)}
+#pmodal[data-vr="1"] .pm-route .plink{color:#8fdcff;border-color:#3a6a90}
 .pm-close{position:absolute;top:14px;right:16px;z-index:2;background:rgba(10,26,48,.08);border:1px solid var(--arc-rule);color:var(--arc-text-soft);font-size:12px;padding:5px 14px;cursor:pointer;font-family:var(--font-jp);letter-spacing:.12em;transition:all .2s}
 .pm-close:hover{color:var(--arc-text);border-color:var(--arc-text-soft)}
 /* ライ(データ層の住人)の図鑑はスキャン画面で開く */
@@ -236,6 +257,35 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
 #pmodal[data-vr="1"] .pm-route b{color:#3a6a90}
 #pmodal[data-vr="1"] .pm-close{background:rgba(0,22,44,.5);border-color:#1b3550;color:#5a8cb4}
 @media(max-width:640px){.pm-sheet{flex-direction:column;max-height:92vh}.pm-img{flex:0 0 42vh}.pm-body{padding:22px 20px}}
+/* ===== B4 交差の並置読書 — 二人の証を左右に。アーカイブの見開き ===== */
+#juxta{position:fixed;inset:0;z-index:210;background:rgba(7,16,31,.84);display:flex;align-items:center;justify-content:center;padding:26px;opacity:0;pointer-events:none;transition:opacity .35s}
+#juxta.show{opacity:1;pointer-events:all}
+.jx-frame{position:relative;display:flex;flex-direction:column;width:100%;max-width:1060px;max-height:90vh;background:linear-gradient(180deg,var(--arc-paper),#e6dfcc);border:1px solid var(--arc-paper-edge);box-shadow:0 24px 80px rgba(4,10,22,.6);overflow:hidden;transform:translateY(14px);transition:transform .4s cubic-bezier(.22,.7,.3,1)}
+#juxta.show .jx-frame{transform:none}
+.jx-head{flex:0 0 auto;padding:18px 26px 12px;border-bottom:1px solid var(--arc-rule);display:flex;flex-direction:column;gap:8px}
+.jx-cap{font-family:var(--font-jp);font-size:13px;line-height:1.7;color:var(--arc-text);letter-spacing:.06em;white-space:pre-line;max-width:60em}
+.jx-tabs{display:flex;flex-wrap:wrap;gap:8px}
+.jx-tab{background:none;border:1px solid var(--arc-rule);color:var(--arc-text-soft);padding:4px 12px;font-size:11px;font-family:var(--font-jp);letter-spacing:.08em;cursor:pointer;border-radius:0;transition:all .2s}
+.jx-tab:hover{border-color:var(--arc-text-soft);color:var(--arc-text)}
+.jx-tab.active{border-color:var(--arc-text);color:var(--arc-text);background:rgba(26,43,68,.06)}
+.jx-panes{flex:1;display:flex;min-height:0;position:relative}
+.jx-pane{flex:1;min-width:0;overflow-y:auto;padding:26px 30px 30px;color:var(--arc-text);scrollbar-width:thin;scrollbar-color:var(--arc-rule) transparent}
+.jx-pane::-webkit-scrollbar{width:3px}.jx-pane::-webkit-scrollbar-thumb{background:var(--arc-rule)}
+.jx-seam{flex:0 0 1px;background:var(--arc-rule);position:relative}
+/* 合わせ目に「焼き切れた一点」。加害の交差だけ赤錆を一滴 */
+.jx-seam::before{content:"";position:absolute;top:50%;left:50%;width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);background:var(--cy-light);box-shadow:0 0 10px var(--cy-halation)}
+#juxta[data-harm="1"] .jx-seam::before{background:var(--cy-dead);box-shadow:0 0 10px var(--cy-dead-halo)}
+.jx-stamp{font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;color:var(--arc-pencil);border:1px solid var(--arc-rule);display:inline-block;padding:3px 9px;margin-bottom:12px}
+.jx-name{font-size:13px;letter-spacing:.2em;color:var(--arc-text-soft);margin-bottom:6px}
+.jx-title{font-size:18px;font-weight:500;letter-spacing:.06em;margin-bottom:10px}
+.jx-meta{font-size:11px;color:var(--arc-text-soft);line-height:1.95;margin-bottom:14px}
+.jx-body{font-size:14px;line-height:1.95;white-space:pre-wrap;letter-spacing:.03em}
+.jx-fade{position:relative;max-height:none}
+.jx-more{margin-top:14px;background:none;border:1px solid var(--arc-rule);color:var(--arc-text-soft);padding:6px 16px;font-size:12px;font-family:var(--font-jp);letter-spacing:.08em;cursor:pointer;border-radius:0;transition:all .2s}
+.jx-more:hover{border-color:var(--arc-text-soft);color:var(--arc-text)}
+.jx-close{position:absolute;top:14px;right:16px;z-index:3;background:rgba(10,26,48,.08);border:1px solid var(--arc-rule);color:var(--arc-text-soft);font-size:12px;padding:5px 14px;cursor:pointer;font-family:var(--font-jp);letter-spacing:.12em;transition:all .2s}
+.jx-close:hover{color:var(--arc-text);border-color:var(--arc-text-soft)}
+@media(max-width:760px){.jx-panes{flex-direction:column}.jx-seam{flex:0 0 1px;width:100%;height:1px}.jx-seam::before{top:50%;left:50%}.jx-pane{padding:20px 20px}.jx-frame{max-height:92vh}}
 @media(pointer:coarse){#zoom-hint{display:none}}
 @media(max-width:640px){
   #sea-drift{animation:none}
@@ -266,6 +316,30 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
   /* 無限ループ系は .01s 化すると逆に高頻度再発火するので完全停止する */
   .dot-glow,#sea-drift,body.vr-view #vr-scrim,[data-vr="1"] .ep-title,body.finale .dot-glow{animation:none!important}
 }
+/* ===== B3 年代軸(時の現像) — 下端の薄いシアンの横スケール。静かに、薄く ===== */
+#era-axis-btn{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(10px);background:rgba(8,18,34,.9);border:1px solid #1b3550;color:#3a6a90;padding:8px 16px;cursor:pointer;border-radius:0;font-size:11px;letter-spacing:.16em;z-index:50;font-family:var(--font-jp);opacity:0;visibility:hidden;transition:opacity .5s,transform .5s,color .25s,border-color .25s}
+#era-axis-btn.ready{opacity:1;visibility:visible;transform:translateX(-50%)}
+#era-axis-btn:hover{border-color:#3a7ab0;color:#7ac8ff}
+#era-axis-btn[aria-pressed="true"]{color:#8fdcff;border-color:var(--vr-grid)}
+body.vr-view #era-axis-btn{opacity:0;visibility:hidden;pointer-events:none}
+#era-axis{position:fixed;left:0;right:0;bottom:0;height:84px;z-index:40;pointer-events:none;opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease;font-family:var(--font-en)}
+#era-axis.open{opacity:1;transform:none;pointer-events:auto}
+body.vr-view #era-axis{opacity:0!important;transform:translateY(14px)!important;pointer-events:none}
+#era-axis .ea-bg{position:absolute;inset:0;background:linear-gradient(0deg,rgba(8,20,38,.92) 0%,rgba(8,20,38,.62) 62%,rgba(8,20,38,0) 100%);pointer-events:none}
+#era-axis svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:84px;display:block}
+.ea-line{stroke:var(--cy-halation);stroke-width:.6;opacity:.32}
+.ea-grid{stroke:var(--cy-grat);stroke-width:.5;opacity:.5}
+.ea-grid-lbl{fill:var(--ui-on-dark-dim);font-size:8px;letter-spacing:.1em;opacity:.7}
+.ea-leader{stroke:#3f5c84;stroke-width:.5;opacity:.32}
+.ea-tick{cursor:pointer}
+.ea-tick circle{fill:var(--cy-trail);opacity:.55;transition:opacity .2s,r .2s}
+.ea-tick.dead circle{fill:var(--cy-dead);opacity:.6}
+.ea-tick:hover circle,.ea-tick:focus-visible circle{opacity:1;r:2.6}
+.ea-tick:focus-visible{outline:none}
+.ea-tick:focus-visible circle{stroke:var(--cy-light);stroke-width:.8}
+.ea-cap{fill:var(--ui-on-dark-dim);font-size:8px;letter-spacing:.18em;opacity:.6}
+@media(max-width:640px){#era-axis{height:60px}#era-axis svg{height:60px}.ea-cap{display:none}}
+@media(prefers-reduced-motion:reduce){#era-axis,#era-axis-btn{transition:none}}
 </style>
 </head>
 <body>
@@ -537,9 +611,12 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
 <div id="tooltip"></div>
 <div id="zoom-hint">scroll: zoom<br>drag: pan</div>
 <button id="layer-btn">◐ 層</button>
+<button id="era-axis-btn" aria-pressed="false" aria-label="年代軸を開く">⊟ 年表</button>
+<div id="era-axis" aria-hidden="true"><div class="ea-bg"></div></div>
 <div id="layer-hint"></div>
 <div id="vr-scrim"></div>
 <div id="complete-note"></div>
+<div id="next-hint" role="status" aria-live="polite" aria-hidden="true"></div>
 
 <!-- 人物図鑑: hover胸像カード + 図版モーダル -->
 <div id="pcard"></div>
@@ -554,6 +631,19 @@ body.vr-view #nagi-layer .nm-hit{pointer-events:all}
       <div class="pm-line" id="pm-line"></div>
       <div class="pm-bio" id="pm-bio"></div>
       <div class="pm-route" id="pm-route"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 交差の並置読書(B4): 時を越えて同じ場所に立った二人の証を、左右に並べる -->
+<div id="juxta" role="dialog" aria-modal="true" aria-label="交差する二つの証">
+  <button class="jx-close" onclick="closeJuxtapose()">✕ 閉じる</button>
+  <div class="jx-frame">
+    <div class="jx-head"><span class="jx-cap" id="jx-cap"></span><div class="jx-tabs" id="jx-tabs"></div></div>
+    <div class="jx-panes">
+      <div class="jx-pane" id="jx-a"></div>
+      <div class="jx-seam" id="jx-seam"></div>
+      <div class="jx-pane" id="jx-b"></div>
     </div>
   </div>
 </div>
@@ -648,6 +738,8 @@ const st = {
   dragging:false, dsx:0, dsy:0, psx:0, psy:0,
   pinchD:0, currentChar:null, currentEp:null
 };
+// 指タップ端末か (星の的・最小間隔を広げ、長押しで図鑑を開く)
+const COARSE=matchMedia('(pointer:coarse)').matches;
 
 function loadProg(){try{return JSON.parse(localStorage.getItem('stellar-v1')||'{}')}catch{return{}}}
 function saveProg(){localStorage.setItem('stellar-v1',JSON.stringify(prog))}
@@ -655,12 +747,28 @@ const prog = loadProg();
 function getProg(id){if(!prog[id])prog[id]={read:[]};return prog[id]}
 function isRead(id,ep){return getProg(id).read.includes(ep)}
 function markRead(id,ep){const p=getProg(id);if(!p.read.includes(ep))p.read.push(ep);saveProg()}
+// stellar-v1 への後方互換な追記: prog._meta = { lastRead:{id,ep}, seenCross:["a|b",...] }
+function progMeta(){return prog._meta||(prog._meta={})}
+function setLastRead(id,ep){progMeta().lastRead={id,ep};saveProg()}
+function getLastRead(){const m=progMeta().lastRead;return(m&&CHARS.some(c=>c.id===m.id))?m:null}
+function crossKey(cp){return cp.chars.slice().sort().join('|')}
+function currentCrossSet(){return CROSS_POINTS.filter(cp=>isComplete(cp.chars[0])&&isComplete(cp.chars[1])).map(crossKey)}
+function getSeenCross(){const s=progMeta().seenCross;return Array.isArray(s)?s:[]}
+function saveSeenCross(arr){progMeta().seenCross=Array.from(new Set(arr));saveProg()}
 function isComplete(id){const c=CHARS.find(x=>x.id===id);return c&&c.episode_count>0&&getProg(id).read.length>=c.episode_count}
 function allDone(){return CHARS.filter(c=>c.episode_count>0&&STORIES[c.id]).every(c=>isComplete(c.id))}
 
 // ナギ(char_35)は「巡礼先の代表キャラ」を読了するまで地図に現れない(懐かしみながら辿る最終話)
 const NAGI_ID='char_35';
 const NAGI_GATE=['char_03','char_05','char_06','char_13','char_21']; // ガラン/ミレス/タリン/霧島/ウスカリ の代表
+// ナギ(char_35)の5つの巡礼先 → かつてそこに生きた人。図鑑で一方向リンクを張る(B6)
+const NAGI_PILGRIMAGE=[
+  {ruin:'ウスカリの廃城塞', ids:['char_21']},
+  {ruin:'ガラン高地・落城跡', ids:['char_03']},
+  {ruin:'ミレスの廃墟', ids:['char_05']},
+  {ruin:'霧島・無人の要塞', ids:['char_13','char_30']},
+  {ruin:'タリンの森の奥', ids:['char_06']},
+];
 function nagiUnlocked(){return NAGI_GATE.every(id=>isComplete(id));}
 function charVisible(c){return c.id!==NAGI_ID||nagiUnlocked();}
 
@@ -682,6 +790,29 @@ function center(){
   st.panY=(innerHeight-SVG_H*st.zoom)/2;
   applyT();
 }
+// ある人物の現在地を画面中央へ一回tweenで寄せる(露光=遅く一方向、終端で必ず止まる)。将来B3/B9でも再利用
+function panToCharacter(id,opts){
+  opts=opts||{};
+  const c=CHARS.find(x=>x.id===id);if(!c)return;
+  const dp=(st.dotPos&&st.dotPos[id])||c.waypoints[curIdx(c)].coord;
+  const tz=Math.max(st.zoom,Math.min(opts.zoom||1.4,7));
+  const target={zoom:tz,panX:innerWidth/2-dp[0]*tz,panY:innerHeight/2-dp[1]*tz};
+  const from={zoom:st.zoom,panX:st.panX,panY:st.panY};
+  if(REDUCED_MOTION){st.zoom=target.zoom;st.panX=target.panX;st.panY=target.panY;clamp();applyT();updateLabels();if(opts.then)opts.then();return}
+  const t0=performance.now(),dur=opts.dur||900;
+  st._panTween=(st._panTween||0)+1;const tok=st._panTween;
+  (function step(){
+    if(st._panTween!==tok)return;
+    const k=Math.min(1,(performance.now()-t0)/dur),e=1-Math.pow(1-k,3);
+    st.zoom=from.zoom+(target.zoom-from.zoom)*e;
+    st.panX=from.panX+(target.panX-from.panX)*e;
+    st.panY=from.panY+(target.panY-from.panY)*e;
+    clamp();applyT();
+    if(k<1){setTimeout(step,16);return}
+    updateLabels();if(opts.then)opts.then();
+  })();
+}
+['mousedown','wheel','touchstart'].forEach(ev=>mroot.addEventListener(ev,()=>{st._panTween=(st._panTween||0)+1},{passive:true}));
 
 mroot.addEventListener('wheel',e=>{
   e.preventDefault();
@@ -926,7 +1057,7 @@ function renderDots(){
   const DP={};
   {
     const P=CHARS.filter(charVisible).map(c=>{const w=c.waypoints[curIdx(c)].coord;return{id:c.id,x:w[0],y:w[1],ox:w[0],oy:w[1]};});
-    const MIN=11;
+    const MIN=COARSE?14:11; // 指タップの端末では星をやや広く離す
     for(let it=0;it<150;it++){
       let moved=false;
       for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){
@@ -946,14 +1077,15 @@ function renderDots(){
 
   // ===== crossing / same-origin help markers — drawn BEHIND the dots so the WHOLE disc is =====
   // hoverable (transparent fill, not just the ring edge) while dots still win every click.
-  const addMark=(x,y,r,stroke,sw,op,dash,txt)=>{
+  const addMark=(x,y,r,stroke,sw,op,dash,txt,onClick)=>{
     const m=document.createElementNS('http://www.w3.org/2000/svg','circle');
     m.setAttribute('cx',x);m.setAttribute('cy',y);m.setAttribute('r',r);
     m.setAttribute('fill','rgba(0,0,0,0)');
     m.setAttribute('stroke',stroke);m.setAttribute('stroke-width',sw);m.setAttribute('opacity',op);
     if(dash)m.setAttribute('stroke-dasharray',dash);
-    m.style.pointerEvents='all';m.style.cursor='help'; // 'all' => the transparent interior hit-tests too
+    m.style.pointerEvents='all';m.style.cursor=onClick?'pointer':'help';
     m.addEventListener('mouseenter',e=>tip(e,txt));m.addEventListener('mousemove',e=>tip(e,txt));m.addEventListener('mouseleave',hideTip);
+    if(onClick)m.addEventListener('click',e=>{e.stopPropagation();onClick();});
     dotsL.appendChild(m);
   };
   SAME_ORIGIN.forEach(s=>addMark(s.coord[0],s.coord[1],16,'#2e4d7a','0.4','0.6','2,4',s.tip));
@@ -969,12 +1101,31 @@ function renderDots(){
   CROSS_POINTS.forEach(cp=>{
     if(!(isComplete(cp.chars[0])&&isComplete(cp.chars[1])))return;
     const k=cp.coord.join(',');
-    (crossAt[k]=crossAt[k]||{coord:cp.coord,tips:[]}).tips.push(cp.tip);
+    (crossAt[k]=crossAt[k]||{coord:cp.coord,tips:[],pairs:[]});
+    crossAt[k].tips.push(cp.tip);
+    crossAt[k].pairs.push(cp); // B4: 並置読書のため交差ペアそのものを保持
+  });
+  // 未定着の予兆(B5): 片方だけ読了の交差を、ごく薄い潜像として先出しする。
+  // tip も hit も付けない(両方読むまで内容は伏せる) — 「ここで誰かと誰かが交わる」という気配だけ。
+  // 既に定着済み(両者読了)の座標は除外。読書が進むと潜像→二重露光の定着へ。
+  const latent={};
+  CROSS_POINTS.forEach(cp=>{
+    const a=isComplete(cp.chars[0]),b=isComplete(cp.chars[1]);
+    if(a===b)return; // 両方未読 or 両方読了はスキップ
+    const k=cp.coord.join(',');
+    if(crossAt[k])return; // 同座標に定着済みの交差があれば潜像は出さない
+    latent[k]=cp.coord;
+  });
+  Object.values(latent).forEach(coord=>{
+    const d=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    d.setAttribute('cx',coord[0]);d.setAttribute('cy',coord[1]);d.setAttribute('r','1.3');
+    d.setAttribute('fill','#bcd8f4');d.setAttribute('opacity','0.16');
+    d.style.pointerEvents='none';dotsL.appendChild(d);
   });
   Object.values(crossAt).forEach(gx=>{
     const tip=gx.tips.join('\n\n');
     const harm=/加害|撃つ|虐殺|処刑/.test(tip);
-    addMark(gx.coord[0],gx.coord[1],14,'#bcd8f4','0.4','0.28',null,tip);  // 外輪 + hit
+    addMark(gx.coord[0],gx.coord[1],14,'#bcd8f4','0.4','0.28',null,tip+'\n\n（触れると、二人の証を並べて読める）',()=>openJuxtapose(gx.pairs)); // 外輪 + hit + 並置(B4)
     addDot(gx.coord[0],gx.coord[1],2.0,harm?'#e8cfc2':'#ffffff','0.92');  // 焼き切れた芯
     const m=document.createElementNS(NS_SVG,'circle');                     // 内輪
     m.setAttribute('cx',gx.coord[0]);m.setAttribute('cy',gx.coord[1]);m.setAttribute('r',8);
@@ -1122,7 +1273,7 @@ function renderDots(){
     // bounded transparent hit target: comfortable to tap, small enough never to blanket a neighbour
     if(hasStory){
       const hit=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      hit.setAttribute('cx',cx);hit.setAttribute('cy',cy);hit.setAttribute('r','4.5');
+      hit.setAttribute('cx',cx);hit.setAttribute('cy',cy);hit.setAttribute('r',COARSE?'7':'4.5'); // 指タップは広めの的
       hit.setAttribute('fill','rgba(0,0,0,0)');hit.style.pointerEvents='all';hit.style.cursor='pointer';
       g.appendChild(hit);
     }
@@ -1150,9 +1301,15 @@ function renderDots(){
     lbl.textContent=c.name;g.appendChild(lbl);
 
     if(hasStory){
-      g.addEventListener('click',e=>{e.stopPropagation();openChar(c.id)});
+      let _lp,_lpFired=false;
+      g.addEventListener('click',e=>{e.stopPropagation();if(_lpFired){_lpFired=false;return}openChar(c.id)});
       g.addEventListener('mouseenter',e=>{setHover(c.id);tip(e,`${c.name}\n${c.era} / ${c.origin}\n${p.read.length}/${c.episode_count}話`)});
       g.addEventListener('mouseleave',()=>{clearHover();hideTip()});
+      // 右クリック/長押しで図鑑(人物図版)を開く — 地図を眺める段階からの副入口
+      g.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();openPortrait(c.id)});
+      g.addEventListener('touchstart',()=>{_lpFired=false;_lp=setTimeout(()=>{_lp=null;_lpFired=true;openPortrait(c.id)},520)},{passive:true});
+      g.addEventListener('touchmove',()=>{clearTimeout(_lp);_lp=null});
+      g.addEventListener('touchend',()=>{if(_lp){clearTimeout(_lp);_lp=null}}); // 短タップは通常のopenChar(click)へ
       // キーボード/スクリーンリーダでも星に触れられるように (Tab巡回 + Enter/Space)
       g.setAttribute('tabindex','0');g.setAttribute('role','button');
       g.setAttribute('aria-label',`${c.name} ${c.era} ${p.read.length}/${c.episode_count}話`);
@@ -1175,6 +1332,75 @@ function updateLabels(){
   document.querySelectorAll('.dot-label').forEach(l=>{
     l.setAttribute('opacity',st.zoom>=2.2?'.75':'0');
   });
+}
+
+// ===== B3: 一回きりの pan&zoom tween — 終われば止まる(常時RAFを持たない方針の維持) =====
+function flyTo(wx,wy,targetZoom){
+  const tz=Math.max(fitZoom(),Math.min(7,targetZoom||3.2));
+  const cxv=innerWidth/2, cyv=innerHeight*0.42;
+  const tpx=cxv-wx*tz, tpy=cyv-wy*tz;
+  if(REDUCED_MOTION){st.zoom=tz;st.panX=tpx;st.panY=tpy;clamp();applyT();updateLabels();return}
+  const sz=st.zoom,spx=st.panX,spy=st.panY,t0=performance.now(),DUR=620;
+  st._flyId=(st._flyId||0)+1; const myId=st._flyId;
+  const ease=t=>1-Math.pow(1-t,3);
+  (function step(){
+    if(st._flyId!==myId)return;
+    const k=ease(Math.min(1,(performance.now()-t0)/DUR));
+    st.zoom=sz+(tz-sz)*k;st.panX=spx+(tpx-spx)*k;st.panY=spy+(tpy-spy)*k;
+    clamp();applyT();
+    if(k<1)requestAnimationFrame(step);else updateLabels();
+  })();
+}
+mroot.addEventListener('mousedown',()=>{st._flyId=(st._flyId||0)+1;},true);
+mroot.addEventListener('wheel',()=>{st._flyId=(st._flyId||0)+1;},true);
+
+// ===== B3: 年代軸 — era順に小さな目盛り点。密集帯は等間隔再配置+引き出し線で重なりを解く =====
+function eraYear(c){const m=(c.era||'').match(/AE (\d+)/);return m?parseInt(m[1],10):2000;}
+function renderEraAxis(){
+  const host=document.getElementById('era-axis');if(!host)return;
+  host.querySelectorAll('svg').forEach(s=>s.remove());
+  const W=innerWidth, mobile=matchMedia('(max-width:640px)').matches;
+  const H=mobile?60:84;
+  const padL=mobile?54:96, padR=mobile?20:76, axisY=H-(mobile?20:26);
+  const usable=Math.max(40,W-padL-padR);
+  const Y0=480,Y1=2163;
+  const xOf=y=>padL+(y-Y0)/(Y1-Y0)*usable;
+  const list=CHARS.filter(charVisible).map(c=>({c,year:eraYear(c),x:xOf(eraYear(c)),ox:xOf(eraYear(c))})).sort((a,b)=>a.year-b.year);
+  const MIN=mobile?7:9;
+  // 密集帯(AE1907-1975に16人)を確実に分離: 引き戻しは弱く・反復は多めに
+  for(let it=0;it<260;it++){let moved=false;
+    for(let i=0;i<list.length-1;i++){const d=list[i+1].x-list[i].x;
+      if(d<MIN){const push=(MIN-d)/2;list[i].x-=push;list[i+1].x+=push;moved=true;}}
+    for(const p of list){p.x+=(p.ox-p.x)*0.015;}
+    list.forEach(p=>{p.x=Math.max(padL,Math.min(W-padR,p.x));});
+    if(!moved)break;
+  }
+  const NS='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const mk=(t,at)=>{const e=document.createElementNS(NS,t);for(const k in at)e.setAttribute(k,at[k]);return e;};
+  svg.appendChild(mk('line',{'class':'ea-line',x1:padL,y1:axisY,x2:W-padR,y2:axisY}));
+  for(let y=500;y<=2100;y+=mobile?500:250){const gx=xOf(y);
+    svg.appendChild(mk('line',{'class':'ea-grid',x1:gx,y1:axisY-3,x2:gx,y2:axisY+3}));
+    if(!mobile){const t=mk('text',{'class':'ea-grid-lbl',x:gx,y:axisY+13,'text-anchor':'middle'});t.textContent='AE'+y;svg.appendChild(t);}
+  }
+  if(!mobile){const cap=mk('text',{'class':'ea-cap',x:padL,y:14});cap.textContent='時の現像 — 年代軸';svg.appendChild(cap);}
+  list.forEach(({c,x,ox})=>{
+    const dead=c.died&&isComplete(c.id);
+    const ty=axisY-(mobile?12:16);
+    svg.appendChild(mk('line',{'class':'ea-leader',x1:ox,y1:axisY,x2:x,y2:ty}));
+    const g=mk('g',{'class':'ea-tick'+(dead?' dead':''),tabindex:'0',role:'button','aria-label':`${c.name} ${c.era}`});
+    g.appendChild(mk('circle',{cx:x,cy:ty,r:'1.9'}));
+    g.appendChild(mk('circle',{cx:x,cy:ty,r:'7',fill:'rgba(0,0,0,0)'}));
+    const wp=(st.dotPos&&st.dotPos[c.id])||c.waypoints[curIdx(c)].coord;
+    const go=ev=>{ev.stopPropagation();flyTo(wp[0],wp[1],3.4);setHover(c.id);clearTimeout(st._eaT);st._eaT=setTimeout(clearHover,1600);};
+    g.addEventListener('mouseenter',ev=>{setHover(c.id);tip(ev,`${c.name}\n${c.era} / ${c.origin}`);});
+    g.addEventListener('mousemove',ev=>tip(ev,`${c.name}\n${c.era} / ${c.origin}`));
+    g.addEventListener('mouseleave',()=>{clearHover();hideTip();});
+    g.addEventListener('click',go);
+    g.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();go(ev);}});
+    svg.appendChild(g);
+  });
+  host.appendChild(svg);
 }
 
 // ===== TOOLTIP =====
@@ -1258,7 +1484,14 @@ function openPortrait(id){
   const k=Math.max(1,getProg(id).read.length); // 既読waypoint数(未読でも出自=最初の地は地図で見えている)
   const seen=c.waypoints.slice(0,Math.min(k,c.waypoints.length)).map(w=>w.label);
   const rest=c.waypoints.length-seen.length;
-  document.getElementById('pm-route').innerHTML='<b>歩いた道</b>'+seen.join(' → ')+(rest>0?` → <span style="opacity:.55">（未読の道 ${rest}）</span>`:'');
+  let routeHTML='<b>歩いた道</b>'+seen.join(' → ')+(rest>0?` → <span style="opacity:.55">（未読の道 ${rest}）</span>`:'');
+  // ナギの巡礼 — 5つの廃墟から、かつてそこに生きた人へ(一方向リンク。35人が一つの星座に閉じる)
+  if(id===NAGI_ID){
+    const link=tid=>{const t=CHARS.find(x=>x.id===tid);return t?`<span class="plink" onclick="closePortrait();openChar('${tid}')">${t.name}</span>`:'';};
+    const pil=NAGI_PILGRIMAGE.map(r=>`${r.ruin} — ${r.ids.map(link).filter(Boolean).join('・')}`).join('<br>');
+    routeHTML+=`<b style="margin-top:16px">巡礼の先で、かつて生きた者</b>${pil}`;
+  }
+  document.getElementById('pm-route').innerHTML=routeHTML;
   document.getElementById('pm-img').alt=`${c.name} — ${MEDIA_LABEL[p.media]}`;
   st._lastFocusP=document.activeElement;
   m.inert=false;
@@ -1272,6 +1505,66 @@ function closePortrait(){
   st._lastFocusP=null;
 }
 document.getElementById('pmodal').addEventListener('click',e=>{if(e.target.id==='pmodal')closePortrait()});
+
+// ===== B4: 交差の並置読書 — 時を越えて同じ場所に立った二人の証を左右に並べる =====
+// 交差座標に最も近い waypoint のエピソードを、その人の「この交差での話」とする(データ駆動・編集不要)
+function crossEp(charId,coord){
+  const c=CHARS.find(x=>x.id===charId);if(!c||!c.waypoints.length)return 1;
+  let best=0,bd=Infinity;
+  c.waypoints.forEach((w,i)=>{const d=Math.hypot(w.coord[0]-coord[0],w.coord[1]-coord[1]);if(d<bd){bd=d;best=i;}});
+  return best+1;
+}
+function jxEscapeHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function renderJxPane(host,charId,coord){
+  const c=CHARS.find(x=>x.id===charId),sd=STORIES[charId];
+  const ep=crossEp(charId,coord);
+  const epd=sd&&sd.episodes.find(e=>e.ep===ep);
+  if(!c||!epd){host.innerHTML='<div class="jx-name">（この証はまだ読み込まれていない）</div>';return;}
+  host.innerHTML=
+    `<div class="jx-stamp">No.${String(parseInt(charId.replace('char_',''),10)).padStart(2,'0')} — ${c.era.replace(/\s+/g,'')} — 第${ep}話</div>`
+    +`<div class="jx-name">${c.era} — ${c.name}</div>`
+    +`<div class="jx-title">${jxEscapeHtml(epd.title)}</div>`
+    +`<div class="jx-meta">時刻 ${jxEscapeHtml(epd.header.time)}　／　場所 ${jxEscapeHtml(epd.header.place)}</div>`
+    +`<div class="jx-body">${jxEscapeHtml(epd.text)}</div>`
+    +`<button class="jx-more" type="button">${c.name}の証を、はじめから辿る →</button>`;
+  host.querySelector('.jx-more').onclick=()=>{closeJuxtapose();openChar(charId);};
+  host.scrollTop=0;
+}
+function renderJxPair(pair){
+  const jx=document.getElementById('juxta');
+  const harm=/加害|撃つ|虐殺|処刑/.test(pair.tip);
+  jx.dataset.harm=harm?'1':'0';
+  document.getElementById('jx-cap').textContent=pair.tip;
+  renderJxPane(document.getElementById('jx-a'),pair.chars[0],pair.coord);
+  renderJxPane(document.getElementById('jx-b'),pair.chars[1],pair.coord);
+}
+function openJuxtapose(pairs){
+  if(!pairs||!pairs.length)return;
+  const jx=document.getElementById('juxta');
+  // 同座標に複数の交差(霧島=ソウラ×トウカ と ナギ×トウカ)があればタブで切替
+  const tabs=document.getElementById('jx-tabs');tabs.innerHTML='';
+  if(pairs.length>1){
+    pairs.forEach((p,i)=>{
+      const names=p.chars.map(id=>(CHARS.find(c=>c.id===id)||{}).name||'').join(' × ');
+      const b=document.createElement('button');b.className='jx-tab'+(i===0?' active':'');b.type='button';b.textContent=names;
+      b.onclick=()=>{tabs.querySelectorAll('.jx-tab').forEach(t=>t.classList.remove('active'));b.classList.add('active');renderJxPair(p);};
+      tabs.appendChild(b);
+    });
+  }
+  renderJxPair(pairs[0]);
+  st._lastFocusJx=document.activeElement;
+  jx.inert=false;jx.classList.add('show');
+  setTimeout(()=>{const b=jx.querySelector('.jx-close');if(b&&jx.classList.contains('show'))b.focus({preventScroll:true})},80);
+}
+function closeJuxtapose(){
+  const jx=document.getElementById('juxta');
+  jx.classList.remove('show');jx.inert=true;
+  if(st._lastFocusJx&&document.contains(st._lastFocusJx)){st._lastFocusJx.focus({preventScroll:true})}
+  st._lastFocusJx=null;
+}
+document.getElementById('juxta').addEventListener('click',e=>{if(e.target.id==='juxta')closeJuxtapose()});
+document.getElementById('juxta').addEventListener('keydown',e=>trapTab(document.getElementById('juxta'),e));
+document.getElementById('juxta').inert=true;
 document.getElementById('pmodal').addEventListener('keydown',e=>trapTab(document.getElementById('pmodal'),e));
 document.getElementById('story-overlay').addEventListener('keydown',e=>{
   if(document.getElementById('pmodal').classList.contains('show'))return; // 前面の図鑑が優先
@@ -1308,6 +1601,8 @@ function openEp(id,ep){
   const epd=sd.episodes.find(e=>e.ep===ep);
   if(!epd)return;
   st.currentChar=id;st.currentEp=ep;
+  // 深リンク(B2): 住所を現在の人物に揃える。epは出さない(共有は常に「その人の入口」、既読保護を維持)
+  try{const h='#'+id;if(location.hash!==h&&(id!==NAGI_ID||nagiUnlocked()))history.replaceState(null,'',h);}catch(_){}
   // background follows the content: a VR character's VR-layer episodes auto-switch to the data layer
   const wi=epd.waypoint_index!=null?epd.waypoint_index:ep-1;
   const wl=c.waypoints[wi];
@@ -1332,6 +1627,7 @@ function openEp(id,ep){
 <div class="ep-body">${epd.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
 <div class="ep-footer">
   <button class="like-btn${isLiked?' liked':''}" id="like-btn" onclick="doLike(this)" aria-pressed="${isLiked}"><span id="like-icon"${isLiked?' style="color:#b5654a"':''}>${isLiked?'♥':'♡'}</span> <span id="like-cnt">${(likes+(isLiked?1:0)).toLocaleString()}</span></button>
+  <button class="hand-btn" id="hand-btn" onclick="handOver(this)" title="この人の入口の写しを携える"><span class="hand-mark">⌖</span> この証を、誰かに手渡す</button>
   <div class="ep-nav">
     <button class="nav-btn" onclick="navEp(-1)" ${ep<=1?'disabled':''}>← 前の話</button>
     <span class="ep-indicator">${ep} / ${c.episode_count}</span>
@@ -1361,14 +1657,19 @@ function finishNext(){
   const segIdx=Math.min(getProg(id).read.length-2,c.waypoints.length-2);
   if(segIdx>=0)startFreshFade(id,segIdx);
   renderDots();drawTrails();updateLabels();
+  {const ax=document.getElementById('era-axis');if(ax&&ax.classList.contains('open'))renderEraAxis();} // B3: ナギ解放/進行を軸へ反映
   // 二重露光 — この読了で新たに成立した「時を越えた交差」だけが一度発火する
   CROSS_POINTS.forEach((cp,i)=>{
     if(!crossBefore[i]&&isComplete(cp.chars[0])&&isComplete(cp.chars[1]))fireDoubleExpose(cp);
   });
   if(isComplete(id)){
     if(!wasComplete)fixStar(id,c.died);
-    if(!wasAll&&allDone())startFinale();
-    closeStory();return
+    setLastRead(id,c.episode_count); // 再訪導線(B8)のため「最後に読了した人」を記憶
+    const finaleNow=!wasAll&&allDone();
+    if(finaleNow)startFinale();
+    const nagiJustAppeared=!wasUnlocked&&nagiUnlocked();
+    // 次導線(B7): finale/ナギ新出現時は抑止(その演出を主役に)。それ以外は一拍置いて次の近い未読星を指す
+    closeStory(finaleNow||nagiJustAppeared?null:id);return
   }
   if(ep<c.episode_count)openEp(id,ep+1);
 }
@@ -1442,11 +1743,112 @@ function navEp(d){
   const ne=st.currentEp+d;
   if(ne>=1&&ne<=c.episode_count)openEp(st.currentChar,ne);
 }
-function closeStory(){
+// ===== 手渡し(B2): 一人ぶんの証の入口を、URLの写しとして携える =====
+// 「拡散」でなく「手渡す」。露光と同じ静かな一動作で、確認は記録調の短いトーストだけ。
+function handOver(btn){
+  const id=st.currentChar;if(id==null)return;
+  if(id===NAGI_ID&&!nagiUnlocked()){showHandToast('まだ、辿り着いていない');return}
+  const c=CHARS.find(x=>x.id===id);
+  const url=location.origin+location.pathname+'#'+id;
+  const done=()=>{btn&&btn.setAttribute('disabled','');showHandToast('写しを携えた');setTimeout(()=>btn&&btn.removeAttribute('disabled'),2600);};
+  const fail=()=>showHandToast('写しは、手の中に。');
+  if(navigator.share){
+    navigator.share({title:'青写真の星図 — '+(c?c.name:'一人の証'),text:(c?c.name:'')+'の証へ',url})
+      .then(done).catch(err=>{if(err&&err.name==='AbortError')return;copyUrl(url,done,fail);});
+  }else{copyUrl(url,done,fail);}
+}
+function copyUrl(url,done,fail){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done).catch(()=>legacyCopy(url,done,fail));
+  }else{legacyCopy(url,done,fail);}
+}
+function legacyCopy(url,done,fail){
+  try{
+    const ta=document.createElement('textarea');ta.value=url;ta.setAttribute('readonly','');
+    ta.style.position='fixed';ta.style.top='-9999px';document.body.appendChild(ta);
+    ta.select();const ok=document.execCommand&&document.execCommand('copy');document.body.removeChild(ta);
+    if(ok){done();return}
+  }catch(_){}
+  try{window.prompt('この住所を、誰かに手渡してください',url);done();}catch(_){fail();}
+}
+// 記録調トースト — 既存 #complete-note を流用(新DOM/新色を増やさない)
+function showHandToast(msg){
+  const n=document.getElementById('complete-note');if(!n)return;
+  clearTimeout(st._handT);
+  n.innerHTML='<span style="font-size:12px;letter-spacing:.22em;line-height:2.2">'+msg+'</span>';
+  n.classList.add('show');st._handT=setTimeout(()=>n.classList.remove('show'),2400);
+}
+function closeStory(justFinishedId){
   overlay.classList.remove('visible');overlay.inert=true;st.currentChar=null;st.currentEp=null;
+  // 入口を閉じたら住所も入口前(hashなし)に戻す
+  try{if(location.hash)history.replaceState(null,'',location.pathname+location.search);}catch(_){}
   if(st._lastFocusStory&&document.contains(st._lastFocusStory)){st._lastFocusStory.focus({preventScroll:true})}
   st._lastFocusStory=null;
   if(st._layerHintPending){st._layerHintPending=false;const b=document.getElementById('layer-btn');if(b){b.classList.add('reveal-pulse');setTimeout(()=>b.classList.remove('reveal-pulse'),2500);}showLayerHint();}
+  // 読了で閉じた時のみ、定着演出を見せてから一拍置いて「次の人へ」を静かに出す(自動連鎖しない)
+  clearTimeout(st._nextHintT);
+  if(justFinishedId)st._nextHintT=setTimeout(()=>showNextHint(justFinishedId),2000);
+}
+// ===== B7: 読了後の「次の人へ」— 近い未読の星を1つだけ静かに指す。✕で消える =====
+function nearestUnreadStar(fromId){
+  const fc=CHARS.find(x=>x.id===fromId);
+  const from=(st.dotPos&&st.dotPos[fromId])||(fc?fc.waypoints[curIdx(fc)].coord:null);
+  if(!from)return null;
+  let best=null,bd=Infinity;
+  CHARS.forEach(c=>{
+    if(!charVisible(c)||c.id===fromId)return;
+    if(!(c.episode_count>0&&STORIES[c.id]))return;
+    if(isComplete(c.id))return;
+    const pos=(st.dotPos&&st.dotPos[c.id])||c.waypoints[curIdx(c)].coord;
+    const d=Math.hypot(pos[0]-from[0],pos[1]-from[1]);
+    if(d<bd){bd=d;best=c;}
+  });
+  return best;
+}
+function hideNextHint(){const h=document.getElementById('next-hint');if(h){h.classList.remove('show');h.setAttribute('aria-hidden','true');}}
+function showNextHint(fromId){
+  if(overlay.classList.contains('visible'))return; // 別の物語を開いていたら出さない
+  const h=document.getElementById('next-hint');if(!h)return;
+  const next=nearestUnreadStar(fromId);
+  if(!next){hideNextHint();return}
+  const read=getProg(next.id).read.length;
+  const status=read>0?`途中（${read}/${next.episode_count}話）`:'まだ ひらいていない';
+  h.innerHTML=
+    '<div class="nh-body"><span class="nh-lead">もし、続けるなら</span>'
+    +`近くに <b id="nh-name" tabindex="0" role="button">${next.name}</b> の証がある。<span style="color:var(--ui-on-dark-dim);font-size:10px">— ${next.era}・${status}</span></div>`
+    +'<button class="nh-go" type="button">ひらく</button>'
+    +'<button class="nh-x" type="button" aria-label="閉じる">✕</button>';
+  h.setAttribute('aria-hidden','false');
+  const go=()=>{hideNextHint();clearTimeout(st._npT);openChar(next.id);};
+  h.querySelector('.nh-go').onclick=go;
+  h.querySelector('#nh-name').onclick=go;
+  h.querySelector('#nh-name').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}};
+  h.querySelector('.nh-x').onclick=hideNextHint;
+  h.classList.add('show');
+  setHover(next.id);
+  const core=dotsL.querySelector(`g[data-id="${next.id}"] .star-core`);
+  if(core){core.classList.remove('next-pulse');void core.getBBox();core.classList.add('next-pulse');
+    core.addEventListener('animationend',()=>core.classList.remove('next-pulse'),{once:true});}
+  clearTimeout(st._npT);st._npT=setTimeout(clearHover,2600);
+}
+// ===== B8/B10: 再訪時の「おかえり／続きから」— complete-note 流用 4-5秒。場所は伏せる =====
+function showRevisitNote(){
+  const doneN=CHARS.filter(c=>isComplete(c.id)).length;
+  if(doneN===0)return;
+  const n=document.getElementById('complete-note');if(!n)return;
+  const now=currentCrossSet(),seen=getSeenCross();
+  const newCross=now.filter(k=>!seen.includes(k)).length;
+  if(now.length)saveSeenCross(now.concat(seen));
+  const lr=getLastRead();
+  const lrName=lr?(CHARS.find(c=>c.id===lr.id)||{}).name:null;
+  let html='<span style="font-family:var(--font-mono);letter-spacing:.26em;font-size:12px;color:var(--ui-stamp)">紙は、前回の露光を覚えている</span>'
+    +`<br><span style="font-size:13px;color:var(--cy-light);letter-spacing:.2em">${doneN} / ${CHARS.length} が、すでに現像されている</span>`;
+  if(lrName)html+=`<br><span style="font-size:11px;color:#aec4de;letter-spacing:.12em">最後に読んだのは、${lrName}の証</span>`;
+  if(newCross>0)html+=`<br><span style="font-size:11px;color:var(--cy-halation);letter-spacing:.1em">前回からの間に、${newCross}つの交差が新たに定着していた</span>`;
+  n.innerHTML=html;
+  n.classList.add('show');
+  clearTimeout(st._rvT);st._rvT=setTimeout(()=>n.classList.remove('show'),lrName?5000:4200);
+  if(lr){clearTimeout(st._rvHintT);st._rvHintT=setTimeout(()=>{if(!overlay.classList.contains('visible'))showNextHint(lr.id)},5200);}
 }
 function doLike(btn){
   // 赤い綴じ紐は読了と同じく不可逆に「定着」する — localStorage(stellar-v1)の liked 配列に永続化
@@ -1464,6 +1866,8 @@ function doLike(btn){
 // ===== KEYBOARD =====
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
+    const jx=document.getElementById('juxta');
+    if(jx&&jx.classList.contains('show')){closeJuxtapose();return}
     const pm=document.getElementById('pmodal');
     if(pm&&pm.classList.contains('show')){closePortrait();return}
     closeStory()
@@ -1525,6 +1929,8 @@ function toggleLayer(){
   st.vrView=!st.vrView;
   document.body.classList.toggle('vr-view',st.vrView);
   document.getElementById('layer-btn').textContent=st.vrView?'◉ データ層':'◐ 層';
+  if(st.vrView){const ax=document.getElementById('era-axis'),eb=document.getElementById('era-axis-btn');
+    if(ax&&ax.classList.contains('open')){ax.classList.remove('open');ax.setAttribute('aria-hidden','true');if(eb){eb.setAttribute('aria-pressed','false');eb.setAttribute('aria-label','年代軸を開く');}}}
   drawTrails();
 }
 function buildNagiLayer(){
@@ -1550,6 +1956,20 @@ function revealLayer(){
   }
 }
 if(localStorage.getItem('seiza-layer'))document.getElementById('layer-btn').classList.add('found');
+// ===== B3: 年代軸トグル(常設だと地図の邪魔 → 既定OFF。新規localStorageキーは持たない) =====
+function toggleEraAxis(){
+  const ax=document.getElementById('era-axis'),btn=document.getElementById('era-axis-btn');
+  const open=!ax.classList.contains('open');
+  if(open){renderEraAxis();ax.classList.add('open');ax.setAttribute('aria-hidden','false');}
+  else{ax.classList.remove('open');ax.setAttribute('aria-hidden','true');}
+  btn.setAttribute('aria-pressed',open?'true':'false');
+  btn.setAttribute('aria-label',open?'年代軸を閉じる':'年代軸を開く');
+}
+(function(){const btn=document.getElementById('era-axis-btn');if(!btn)return;
+  btn.addEventListener('click',toggleEraAxis);
+  setTimeout(()=>btn.classList.add('ready'),1400);
+})();
+window.addEventListener('resize',()=>{const ax=document.getElementById('era-axis');if(ax&&ax.classList.contains('open'))renderEraAxis();});
 center();renderDots();drawTrails();
 loadStories().then(()=>{renderDots();drawTrails();
   if(!Object.keys(STORIES).length){
@@ -1561,14 +1981,42 @@ loadStories().then(()=>{renderDots();drawTrails();
     n.classList.add('show');
   }
 });
+// ===== 深リンク(B2): #char_NN の入口を開く。openChar のみ(ep直リンク禁止=既読保護)。=====
+function resolveHashId(){
+  const m=(location.hash||'').match(/^#(char_\d{2})$/);if(!m)return null;
+  const id=m[1];if(!CHARS.some(c=>c.id===id))return null;
+  if(id===NAGI_ID&&!nagiUnlocked())return null; // 未解放ナギは無効化(ネタバレ防止)
+  return id;
+}
+function consumeHash(){
+  const id=resolveHashId();
+  if(!id){if(location.hash){try{history.replaceState(null,'',location.pathname+location.search)}catch(_){}}return;}
+  openChar(id); // 内部で「既読の次の1話」を選ぶ=未読の先回り開示はしない
+}
 // ===== entry gate (content warning, shown once per browser) =====
+// スマホ初回だけ、操作の手がかりを一度だけ静かに置く
+function showMobileHintOnce(){
+  if(!COARSE||localStorage.getItem('seiza-mobile-hint'))return;
+  localStorage.setItem('seiza-mobile-hint','1');
+  const n=document.getElementById('complete-note');if(!n)return;
+  n.innerHTML='星にふれて、証を読む。<br><span style="font-size:11px;color:#7fa8d4">二本指でひろげる ・ 星を長押しで人物図版</span>';
+  n.classList.add('show');setTimeout(()=>n.classList.remove('show'),5200);
+}
+// 再訪導線(B8/B10): seiza-entered済み=再訪。入場現像が一段落した頃に一度だけ(タブ1回、sessionStorageで連発抑止)
+function fireRevisit(){
+  if(sessionStorage.getItem('seiza-revisit-shown'))return;
+  sessionStorage.setItem('seiza-revisit-shown','1');
+  // 深リンクで人物を直接開く時は、おかえり通知を出さない(その入口に集中させる)
+  if(resolveHashId())return;
+  setTimeout(()=>{if(!overlay.classList.contains('visible')&&typeof showRevisitNote==='function')showRevisitNote()},2600);
+}
 (function(){
   const gate=document.getElementById('entry-gate');
-  if(!gate){document.body.classList.add('booted');return}
+  if(!gate){document.body.classList.add('booted');consumeHash();fireRevisit();setTimeout(showMobileHintOnce,800);return}
   // booted = 地図側の入場現像(星のスタッガー/軌跡フェード)の開始合図
-  if(localStorage.getItem('seiza-entered')){gate.style.display='none';document.body.classList.add('booted');}
+  if(localStorage.getItem('seiza-entered')){gate.style.display='none';document.body.classList.add('booted');consumeHash();fireRevisit();setTimeout(showMobileHintOnce,900);}
   const btn=document.getElementById('eg-enter');
-  if(btn)btn.addEventListener('click',()=>{localStorage.setItem('seiza-entered','1');gate.classList.add('gone');document.body.classList.add('booted');setTimeout(()=>{gate.style.display='none';},650);});
+  if(btn)btn.addEventListener('click',()=>{const wasRevisit=!!localStorage.getItem('seiza-entered');localStorage.setItem('seiza-entered','1');gate.classList.add('gone');document.body.classList.add('booted');setTimeout(()=>{gate.style.display='none';},650);setTimeout(consumeHash,720);if(wasRevisit)setTimeout(fireRevisit,720);setTimeout(showMobileHintOnce,1100);});
   if(btn&&gate.style.display!=='none')setTimeout(()=>btn.focus({preventScroll:true}),120); // 警告ごとSRに渡す初期フォーカス
 })();
 </script>
