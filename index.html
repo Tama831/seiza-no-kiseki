@@ -58,8 +58,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--cy-paper-0);co
 #trail-canvas{position:absolute;top:0;left:0;width:2000px;height:1120px;pointer-events:none}
 /* Azgaar原図は未感光の紙に沈める(輝度逆転の要)。filterは使わない=pan/zoom性能保護 */
 #viewbox{opacity:.16}
-#cy-base,#cy-tint{transition:opacity .5s}
-body.vr-view #cy-base,body.vr-view #cy-tint{opacity:.3}
+#cy-base,#cy-tint,#kirishima-sea{transition:opacity .5s}
+/* データ層では海全体(cy-base)が沈むので、海峡パッチも同じ0.3に揃える(揃えないとそこだけ明るく浮く) */
+body.vr-view #cy-base,body.vr-view #cy-tint,body.vr-view #kirishima-sea{opacity:.3}
 /* Azgaar原図の全面下敷きrect(#080b11)は cy-base の海を覆い隠すので非表示に。
    これで海が本来のプルシアンブルー(--cy-paper-1系)になる */
 #cartography > rect{display:none}
