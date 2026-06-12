@@ -76,8 +76,9 @@ body.vr-view #paper-grain{opacity:0}
 /* 生きている星のハレーションはゆっくり呼吸する(位相は --bd で星ごとにずらす)。
    死者の星だけは静止 — 動かないことが碑になる */
 .dot-glow{animation:star-breath 5.2s ease-in-out infinite;animation-delay:var(--bd,0s)}
-@keyframes star-breath{0%,100%{opacity:calc(var(--ga,.18)*.45)}50%{opacity:var(--ga,.18)}}
+@keyframes star-breath{0%,100%{opacity:calc(var(--ga,.18)*.62)}50%{opacity:var(--ga,.18)}}
 .dot-glow-dead{animation:none}
+.char-dot:hover .dot-glow{animation-play-state:paused}
 /* 入場時の現像 — 星々が一拍ずつ紙に浮かび上がる(一度きり) */
 body.booted .star-in{animation:star-in .9s ease-out both;animation-delay:var(--d,0s)}
 @keyframes star-in{from{opacity:0}}
@@ -1278,7 +1279,7 @@ function renderDots(){
     // bounded transparent hit target: comfortable to tap, small enough never to blanket a neighbour
     if(hasStory){
       const hit=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      hit.setAttribute('cx',cx);hit.setAttribute('cy',cy);hit.setAttribute('r',COARSE?'7':'4.5'); // 指タップは広めの的
+      hit.setAttribute('cx',cx);hit.setAttribute('cy',cy);hit.setAttribute('r',COARSE?'9':'7'); // 可視グロー(aura r=6)より広く取り、星の上どこを狙っても外れないように
       hit.setAttribute('fill','rgba(0,0,0,0)');hit.style.pointerEvents='all';hit.style.cursor='pointer';
       g.appendChild(hit);
     }
