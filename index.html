@@ -931,6 +931,7 @@ function drawTrails(){
 
 // ===== HOVER HIGHLIGHT (lift a whole trajectory: 'this is the path they took') =====
 function setHover(id){
+  clearTimeout(st._clearT); // 隣のhover対象へ移った: 予約された消灯を取り消す(チラつき防止)
   if(st.hoverChar===id)return;
   st.hoverChar=id;drawTrails();
   const hr=document.getElementById('hover-ring');
@@ -938,7 +939,11 @@ function setHover(id){
   if(c){const wp=(st.dotPos&&st.dotPos[id])||c.waypoints[curIdx(c)].coord;
     hr.setAttribute('cx',wp[0]);hr.setAttribute('cy',wp[1]);hr.setAttribute('opacity','1');}
 }
+// 消灯は即時でなく短い猶予で予約 — 近接する星/点/軌跡の間をカーソルが渡る時、
+// 「全軌跡が一瞬もとの明るさに戻る」フラッシュ(=チカチカ)を出さないための緩衝
+function clearHoverSoon(){clearTimeout(st._clearT);st._clearT=setTimeout(clearHover,90);}
 function clearHover(){
+  clearTimeout(st._clearT);
   if(st.hoverChar==null)return;
   st.hoverChar=null;drawTrails();
   document.getElementById('hover-ring').setAttribute('opacity','0');
@@ -1180,7 +1185,7 @@ function renderDots(){
     hit.setAttribute('stroke-width','9');hit.setAttribute('stroke-linejoin','round');
     hit.style.pointerEvents='stroke';hit.style.cursor='pointer';
     hit.addEventListener('mouseenter',()=>setHover(c.id));
-    hit.addEventListener('mouseleave',clearHover);
+    hit.addEventListener('mouseleave',clearHoverSoon);
     hit.addEventListener('click',e=>{e.stopPropagation();openChar(c.id)});
     dotsL.appendChild(hit);
   });
@@ -1289,7 +1294,7 @@ function renderDots(){
         nd.setAttribute('class','char-node');nd.style.cursor='pointer';
         nd.addEventListener('click',e=>{e.stopPropagation();openEp(c.id,ep)});
         nd.addEventListener('mouseenter',e=>{setHover(c.id);tip(e,`${c.name}　第${ep}話\n${wl}`)});
-        nd.addEventListener('mouseleave',()=>{clearHover();hideTip()});
+        nd.addEventListener('mouseleave',()=>{clearHoverSoon();hideTip()});
         g.appendChild(nd);
       }
     }
@@ -1304,7 +1309,7 @@ function renderDots(){
       let _lp,_lpFired=false;
       g.addEventListener('click',e=>{e.stopPropagation();if(_lpFired){_lpFired=false;return}openChar(c.id)});
       g.addEventListener('mouseenter',e=>{setHover(c.id);tip(e,`${c.name}\n${c.era} / ${c.origin}\n${p.read.length}/${c.episode_count}話`)});
-      g.addEventListener('mouseleave',()=>{clearHover();hideTip()});
+      g.addEventListener('mouseleave',()=>{clearHoverSoon();hideTip()});
       // 右クリック/長押しで図鑑(人物図版)を開く — 地図を眺める段階からの副入口
       g.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();openPortrait(c.id)});
       g.addEventListener('touchstart',()=>{_lpFired=false;_lp=setTimeout(()=>{_lp=null;_lpFired=true;openPortrait(c.id)},520)},{passive:true});
@@ -1315,7 +1320,7 @@ function renderDots(){
       g.setAttribute('aria-label',`${c.name} ${c.era} ${p.read.length}/${c.episode_count}話`);
       g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openChar(c.id)}});
       g.addEventListener('focus',()=>setHover(c.id));
-      g.addEventListener('blur',clearHover);
+      g.addEventListener('blur',clearHoverSoon);
     }
     dotsL.appendChild(g);
   });
@@ -1397,7 +1402,7 @@ function renderEraAxis(){
       g.addEventListener('mouseenter',ev=>{clearTimeout(st._eaHoverT);setHover(c.id);tip(ev,`${c.name}\n${c.era} / ${c.origin}`);});
       g.addEventListener('mousemove',ev=>tip(ev,`${c.name}\n${c.era} / ${c.origin}`));
       // 隣の点へ移る一瞬の「全点灯に戻る」フラッシュを消す: 消灯は短い猶予で予約し、次の点に入れば取り消す
-      g.addEventListener('mouseleave',()=>{hideTip();clearTimeout(st._eaHoverT);st._eaHoverT=setTimeout(clearHover,90);});
+      g.addEventListener('mouseleave',()=>{hideTip();clearHoverSoon();});
     }
     g.addEventListener('click',go);
     g.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();go(ev);}});
