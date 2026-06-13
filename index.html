@@ -332,10 +332,10 @@ body.vr-view #era-axis{opacity:0!important;transform:translateY(14px)!important;
 .ea-grid-lbl{fill:var(--ui-on-dark-dim);font-size:8px;letter-spacing:.1em;opacity:.7}
 .ea-leader{stroke:#3f5c84;stroke-width:.5;opacity:.32}
 .ea-tick{cursor:pointer}
-.ea-tick .ea-dot{fill:var(--cy-trail);opacity:.55;transition:opacity .2s,r .2s}
+.ea-tick .ea-dot{fill:var(--cy-trail);opacity:.7;transition:opacity .2s,r .2s}
 .ea-tick .ea-hit{pointer-events:all}
 .ea-tick.dead .ea-dot{fill:var(--cy-dead);opacity:.6}
-.ea-tick:hover .ea-dot,.ea-tick:focus-visible .ea-dot{opacity:1;r:2.6}
+.ea-tick:hover .ea-dot,.ea-tick:focus-visible .ea-dot{opacity:1;r:3.8}
 .ea-tick:focus-visible{outline:none}
 .ea-tick:focus-visible .ea-dot{stroke:var(--cy-light);stroke-width:.8}
 .ea-cap{fill:var(--ui-on-dark-dim);font-size:8px;letter-spacing:.18em;opacity:.6}
@@ -1394,7 +1394,7 @@ function renderEraAxis(){
     const ty=axisY-(mobile?12:16);
     svg.appendChild(mk('line',{'class':'ea-leader',x1:ox,y1:axisY,x2:x,y2:ty}));
     const g=mk('g',{'class':'ea-tick'+(dead?' dead':''),tabindex:'0',role:'button','aria-label':`${c.name} ${c.era}`});
-    g.appendChild(mk('circle',{'class':'ea-dot',cx:x,cy:ty,r:'1.9'}));
+    g.appendChild(mk('circle',{'class':'ea-dot',cx:x,cy:ty,r:'2.9'}));
     g.appendChild(mk('circle',{'class':'ea-hit',cx:x,cy:ty,r:'5.5',fill:'rgba(0,0,0,0)'})); // 当たり判定: 固定。hoverで縮めない(縮めると判定ループでチカチカ)
     const wp=(st.dotPos&&st.dotPos[c.id])||c.waypoints[curIdx(c)].coord;
     const go=ev=>{ev.stopPropagation();flyTo(wp[0],wp[1],3.4);setHover(c.id);clearTimeout(st._eaT);st._eaT=setTimeout(clearHover,1600);};
